@@ -378,35 +378,35 @@
         </div>
     </div>
 
-    <!-- Charts Row 1: Hashprice + BMN Revenue -->
+    <!-- Charts Row 1: Hashprice + Network Difficulty (both data-rich) -->
     <div class="charts-row">
         <div class="chart-card">
             <div class="chart-title">Hashprice (USD/PH/day)</div>
             <div class="chart-container"><canvas id="chartHashprice"></canvas><div class="no-trend" id="noTrendHp" style="display:none;">Trend available after 2+ days of data</div></div>
         </div>
         <div class="chart-card">
-            <div class="chart-title">BMN Daily Revenue (BTC)</div>
-            <div class="chart-container"><canvas id="chartBmnRevenue"></canvas><div class="no-trend" id="noTrendRev" style="display:none;">Trend available after 2+ days of data</div></div>
+            <div class="chart-title">Network Difficulty (T) & Global Hashrate (EH/s)</div>
+            <div class="chart-container"><canvas id="chartDifficulty"></canvas><div class="no-trend" id="noTrendDiff" style="display:none;">Trend available after 2+ days of data</div></div>
         </div>
     </div>
 
-    <!-- Charts Row 2: STRC + BMN Hashrate -->
+    <!-- Charts Row 2: BMN Revenue + STRC (pending Luxor/Exacore data) -->
     <div class="charts-row">
+        <div class="chart-card">
+            <div class="chart-title">BMN Daily Revenue (BTC)</div>
+            <div class="chart-container"><canvas id="chartBmnRevenue"></canvas><div class="no-trend" id="noTrendRev" style="display:none;">Trend available after 2+ days of data</div></div>
+        </div>
         <div class="chart-card">
             <div class="chart-title">STRC Price vs Par ($100) & BTC Rating</div>
             <div class="chart-container"><canvas id="chartStrc"></canvas><div class="no-trend" id="noTrendStrc" style="display:none;">Trend available after 2+ days of data</div></div>
         </div>
+    </div>
+
+    <!-- Charts Row 3: BMN Hashrate (pending Luxor/Exacore data) -->
+    <div class="charts-row">
         <div class="chart-card">
             <div class="chart-title">BMN Hashrate (EH/s) & Active Miners</div>
             <div class="chart-container"><canvas id="chartBmnHashrate"></canvas><div class="no-trend" id="noTrendHash" style="display:none;">Trend available after 2+ days of data</div></div>
-        </div>
-    </div>
-
-    <!-- Charts Row 3: Difficulty -->
-    <div class="charts-row">
-        <div class="chart-card">
-            <div class="chart-title">Network Difficulty (T) & Global Hashrate (EH/s)</div>
-            <div class="chart-container"><canvas id="chartDifficulty"></canvas><div class="no-trend" id="noTrendDiff" style="display:none;">Trend available after 2+ days of data</div></div>
         </div>
     </div>
 
