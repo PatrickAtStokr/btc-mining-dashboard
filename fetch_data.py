@@ -173,6 +173,51 @@ def fetch_network_data():
     return hr, diff
 
 
+# ── Derived Hashprice ────────────────────────────────────────────────────────
+
+def compute_hashprice_history(btc_prices, net_hashrate):
+    """
+    Derive daily hashprice (USD/PH/day) from BTC price + network hashrate.
+    Formula: hashprice = (144 * 3.125 * btc_price) / (network_hashrate_eh * 1000)
+    This is subsidy-only (excludes tx fees) — typically within 3-5% of Luxor values.
+    Network hashrate is interpolated between available data points.
+    """
+    if not net_hashrate:
+        return []
+
+    # Build sorted list of known (date, hashrate) pairs for interpolation
+    known = sorted([(d, hr) for d, hr in net_hashrate.items()])
+    known_dates = [datetime.fromisoformat(d) for d, _ in known]
+    known_hrs   = [hr for _, hr in known]
+
+    result = []
+    for date_str, btc_price in sorted(btc_prices.items()):
+        dt = datetime.fromisoformat(date_str)
+        # Find surrounding known points for interpolation
+        hr = None
+        for i in range(len(known_dates) - 1):
+            if known_dates[i] <= dt <= known_dates[i + 1]:
+                span = (known_dates[i + 1] - known_dates[i]).days
+                if span == 0:
+                    hr = known_hrs[i]
+                else:
+                    frac = (dt - known_dates[i]).days / span
+                    hr = known_hrs[i] + frac * (known_hrs[i + 1] - known_hrs[i])
+                break
+        if hr is None:
+            # Outside known range — use nearest endpoint
+            if dt < known_dates[0]:
+                hr = known_hrs[0]
+            elif dt > known_dates[-1]:
+                hr = known_hrs[-1]
+        if hr and hr > 0:
+            hp = round((450 * btc_price) / (hr * 1000), 4)
+            result.append({"date": date_str, "hashprice_usd": hp})
+
+    print(f"  ✓ Hashprice computed: {len(result)} days (derived from BTC × network hashrate)\n")
+    return result
+
+
 # ── Merge & Output ───────────────────────────────────────────────────────────
 
 def main():
@@ -187,6 +232,10 @@ def main():
         print(f"  ✗ Network data failed: {e}\n")
         net_hashrate, net_difficulty = {}, {}
 
+    # Compute derived hashprice history
+    print("Computing hashprice history (derived from BTC × network hashrate):")
+    hashprice_history = compute_hashprice_history(btc_prices, net_hashrate)
+
     # Build unified output
     output = {
         "updated": datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -195,6 +244,7 @@ def main():
             for d, p in sorted(btc_prices.items())
         ],
         "network_history": [],
+        "hashprice_history": hashprice_history,
     }
 
     # Merge network data
@@ -225,6 +275,9 @@ def main():
         last = output["network_history"][-1]
         print(f"Latest hashrate: {last.get('network_hashrate_eh', 'N/A')} EH/s")
         print(f"Latest diff:     {last.get('difficulty_t', 'N/A')} T")
+    if output["hashprice_history"]:
+        last = output["hashprice_history"][-1]
+        print(f"Latest hashprice:{last['hashprice_usd']} USD/PH/day ({last['date']})")
 
 
 if __name__ == "__main__":

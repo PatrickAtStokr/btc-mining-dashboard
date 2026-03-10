@@ -991,19 +991,22 @@ function renderAll() {
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', async () => {
-    // Load automated data (BTC price + network) from data.json
+    let autoHashprice = [];
+
+    // Load automated data (BTC price + network + derived hashprice) from data.json
     try {
         const resp = await fetch('data.json');
         if (resp.ok) {
             const d = await resp.json();
             if (d.btc_history) BTC_HISTORY = d.btc_history;
             if (d.network_history) NETWORK_HISTORY = d.network_history;
+            if (d.hashprice_history) autoHashprice = d.hashprice_history;
             if (d.updated) {
                 const ts = new Date(d.updated);
                 document.getElementById('lastUpdated').textContent =
                     'Data: ' + ts.toLocaleDateString() + ' ' + ts.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
             }
-            console.log('Loaded data.json:', BTC_HISTORY.length, 'BTC days,', NETWORK_HISTORY.length, 'network days');
+            console.log('Loaded data.json:', BTC_HISTORY.length, 'BTC days,', NETWORK_HISTORY.length, 'network days,', autoHashprice.length, 'hashprice days');
         }
     } catch (e) {
         console.warn('Could not load data.json', e);
@@ -1021,6 +1024,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } catch (e) {
         console.warn('Could not load manual_data.json', e);
+    }
+
+    // Merge hashprice sources: manual Luxor data as base, automated derived values
+    // take precedence for any date they cover — extends the chart to today automatically.
+    if (autoHashprice.length > 0) {
+        const merged = {};
+        HASHPRICE_HISTORY.forEach(d => { merged[d.date] = d.hashprice_usd; });
+        autoHashprice.forEach(d => { merged[d.date] = d.hashprice_usd; });
+        HASHPRICE_HISTORY = Object.entries(merged)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([date, hashprice_usd]) => ({ date, hashprice_usd }));
+        console.log('Merged hashprice history:', HASHPRICE_HISTORY.length, 'days');
     }
 
     // Initialize filtered arrays and render
