@@ -571,11 +571,11 @@ function renderKPIs() {
             sub: 'Uptime ' + latest.bmn_uptime_pct + '%'
         },
         {
-            label: 'BMN Balance',
-            value: '₿' + fmt(latest.bmn_balance_btc, 5),
+            label: 'Mined per BMN2 Token',
+            value: '₿' + fmt(latest.bmn_mined_per_token_btc, 8),
             valueClass: '',
-            change: null,
-            sub: fmtCurrency(latest.bmn_balance_btc * latest.btc_price, 0)
+            change: prev ? pctChange(latest.bmn_mined_per_token_btc, prev.bmn_mined_per_token_btc) : null,
+            sub: fmtCurrency(latest.bmn_mined_per_token_btc * latest.btc_price, 2)
         },
         {
             label: 'STRC Price',
