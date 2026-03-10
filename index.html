@@ -554,7 +554,7 @@ function renderKPIs() {
             value: fmtCurrency(latest.hashprice_usd, 2),
             valueClass: '',
             change: prev ? pctChange(latest.hashprice_usd, prev.hashprice_usd) : null,
-            sub: latest.hashprice_btc + ' BTC/PH/day'
+            sub: latest.hashprice_btc + ' BTC/PH/day · Subsidy only; excl. tx fees (~3–5% below Luxor)'
         },
         {
             label: 'BMN Revenue 24h',
