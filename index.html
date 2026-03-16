@@ -996,7 +996,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Load automated data (BTC price + network + derived hashprice) from data.json
     try {
-        const resp = await fetch('data.json');
+        const resp = await fetch('data.json?v=' + Date.now());
         if (resp.ok) {
             const d = await resp.json();
             if (d.btc_history) BTC_HISTORY = d.btc_history;
@@ -1015,7 +1015,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Load manual data (KPIs, hashprice history, signal) from manual_data.json
     try {
-        const resp2 = await fetch('manual_data.json');
+        const resp2 = await fetch('manual_data.json?v=' + Date.now());
         if (resp2.ok) {
             const m = await resp2.json();
             if (m.data && m.data.length) DATA = m.data;
