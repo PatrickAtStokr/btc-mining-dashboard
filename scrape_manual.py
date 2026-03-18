@@ -1,19 +1,23 @@
 """
 Automated scraper for STOKR Mining Intelligence Dashboard — manual_data.json.
-Replaces the daily screenshot workflow.
+Replaces the daily screenshot workflow entirely.
 
 Sources:
-  1. BMN2 Dashboard (https://bmn2.mining.blockstream.com/) — Playwright headless browser
-     → mined_per_token_btc, btc_price, hashprice_usd
+  1. BMN2 Dashboard (https://bmn2.mining.blockstream.com/) — Playwright intercepts
+     XHR/fetch API calls the page makes, capturing clean JSON directly.
+     → mined_per_token_btc, btc_price, hashprice_usd, bmn_total_hashrate_eh,
+       bmn_circulating, bmn_value_per_token, bmn_term_day, bmn_days_remaining
+
+     BMN2 Value formula (from dashboard):
+       value = (mined_per_token × btc_price) + (days_remaining × hashprice_per_ph_per_day)
+
   2. Luxor Pool API (https://api.luxor.tech/graphql) — GraphQL with API key
      → bmn_hashrate_5m_eh, bmn_hashrate_24h_eh, bmn_active_miners,
        bmn_uptime_pct, bmn_revenue_btc
+     Set as GitHub Secrets: LUXOR_API_KEY, LUXOR_SUBACCOUNT
+
   3. STRC / Strategy preferred stock (Nasdaq: STRC) — yfinance
      → strc_price, strc_dividend_pct, strc_notional_m, strc_vol_30d_m
-
-Environment variables (set as GitHub Secrets):
-  LUXOR_API_KEY       — Luxor pool API key (required for Luxor data)
-  LUXOR_SUBACCOUNT    — Luxor subaccount name for BMN operations
 
 Usage:
     python scrape_manual.py              # run all scrapers
@@ -22,11 +26,12 @@ Usage:
 
 import json
 import os
+import re
 import sys
 import time
 import urllib.request
 import ssl
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 MANUAL_FILE = os.path.join(SCRIPT_DIR, "manual_data.json")
@@ -41,79 +46,162 @@ except Exception:
 TODAY = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
 SKIP_LUXOR = "--skip-luxor" in sys.argv
 
+# BMN2 term constants (fixed: Sept 5 2024 → Sept 4 2028, 1460 days total)
+BMN2_START = date(2024, 9, 5)
+BMN2_END   = date(2028, 9, 4)
+BMN2_TOTAL_DAYS = 1460
 
-# ── BMN2 Dashboard (Playwright) ─────────────────────────────────────────────
+
+# ── BMN2 Dashboard (Playwright + network interception) ───────────────────────
 
 def scrape_bmn2():
-    """Scrape bmn2.mining.blockstream.com with Playwright headless Chromium."""
-    print("  Scraping BMN2 dashboard...")
+    """
+    Load bmn2.mining.blockstream.com with Playwright and intercept the API
+    calls the page makes. This gives us clean JSON without fragile DOM parsing.
+    Falls back to DOM text extraction if no API calls are captured.
+    """
+    print("  Loading BMN2 dashboard and intercepting API calls...")
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        print("  ✗ Playwright not installed. Run: pip install playwright && playwright install chromium")
+        print("  ✗ Playwright not installed.")
         return {}
 
+    captured = []   # will hold all JSON responses captured from XHR/fetch
+
+    def handle_response(response):
+        """Capture all JSON responses the page receives."""
+        try:
+            ct = response.headers.get("content-type", "")
+            if "json" in ct and response.status == 200:
+                url = response.url
+                # Skip tiny responses and known irrelevant endpoints
+                body = response.body()
+                if len(body) > 20:
+                    try:
+                        data = json.loads(body)
+                        captured.append({"url": url, "data": data})
+                        print(f"    [API] {url[:80]} ({len(body)} bytes)")
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
     result = {}
+    page_text = ""
+
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
+        page.on("response", handle_response)
         page.goto("https://bmn2.mining.blockstream.com/", wait_until="networkidle", timeout=60000)
-
-        # Wait for data to render (the page is a JS app)
-        page.wait_for_timeout(5000)
-
-        # Get full page text for parsing
-        text = page.inner_text("body")
+        page.wait_for_timeout(5000)   # let deferred requests finish
+        page_text = page.inner_text("body")
         browser.close()
 
-    print(f"  Page text length: {len(text)} chars")
+    print(f"  Captured {len(captured)} JSON API responses")
 
-    # Parse values from page text
-    import re
+    # ── Try to extract from captured API responses first ──────────────────────
+    # Flatten all JSON data into a searchable dict
+    def deep_find(obj, keys, depth=0):
+        """Recursively search for keys in nested dicts/lists."""
+        found = {}
+        if depth > 6:
+            return found
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                k_lower = k.lower().replace("_", "").replace("-", "")
+                for target in keys:
+                    if target in k_lower:
+                        found[target] = (k, v)
+                found.update(deep_find(v, keys, depth + 1))
+        elif isinstance(obj, list):
+            for item in obj:
+                found.update(deep_find(item, keys, depth + 1))
+        return found
 
-    # Mined per BMN2 token: "0.29005547 BTC"
-    m = re.search(r"Mined per BMN2 token\s*[\n\r]+\s*([\d.]+)\s*BTC", text)
-    if m:
-        result["bmn_mined_per_token_btc"] = float(m.group(1))
-        print(f"    Mined per BMN2: {result['bmn_mined_per_token_btc']} BTC")
+    search_keys = ["mined", "hashprice", "hashrate", "circulating", "btcprice",
+                   "currentbtc", "termday", "dayselapsed", "totaldays", "value"]
 
-    # Current BTC price: "$72,203.00 USD"
-    m = re.search(r"Current BTC price\s*\$?([\d,]+\.?\d*)\s*USD", text)
-    if m:
-        result["btc_price"] = float(m.group(1).replace(",", ""))
-        print(f"    BTC Price: ${result['btc_price']:,.2f}")
+    all_api_data = {}
+    for cap in captured:
+        hits = deep_find(cap["data"], search_keys)
+        for k, (orig_key, val) in hits.items():
+            if val is not None:
+                all_api_data[orig_key] = val
 
-    # Current Hashprice: "$31.29 per Ph"
-    m = re.search(r"Current Hashprice\s*\$?([\d.]+)\s*per\s*Ph", text)
-    if m:
-        result["hashprice_usd"] = float(m.group(1))
-        print(f"    Hashprice: ${result['hashprice_usd']}/PH")
+    if all_api_data:
+        print(f"  API keys found: {list(all_api_data.keys())[:20]}")
 
-    # Total Hashrate: "24.9218 Eh/s"
-    m = re.search(r"Total Hashrate\s*([\d.]+)\s*Eh/s", text)
-    if m:
-        result["bmn_total_hashrate_eh"] = float(m.group(1))
-        print(f"    Total Hashrate: {result['bmn_total_hashrate_eh']} EH/s")
+    # ── Parse page text as fallback / complement ──────────────────────────────
+    def parse_float(pattern, text, label):
+        m = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
+        if m:
+            val = float(m.group(1).replace(",", ""))
+            print(f"    [DOM] {label}: {val}")
+            return val
+        return None
 
-    # Total Circulating BMN2: "24,921.7815"
-    m = re.search(r"Total Circulating BMN2\s*([\d,]+\.?\d*)", text)
-    if m:
-        result["bmn_circulating"] = float(m.group(1).replace(",", ""))
-        print(f"    Circulating BMN2: {result['bmn_circulating']}")
+    # Mined per BMN2 token
+    v = parse_float(r"Mined per BMN2 token[\s\S]{0,30}?([\d]+\.[\d]+)\s*BTC", page_text, "Mined/token")
+    if v: result["bmn_mined_per_token_btc"] = v
+
+    # BTC price
+    v = parse_float(r"Current BTC price[\s\S]{0,10}\$([\d,]+\.?\d*)\s*USD", page_text, "BTC Price")
+    if v: result["btc_price"] = v
+
+    # Hashprice
+    v = parse_float(r"Current Hashprice[\s\S]{0,10}\$([\d.]+)\s*per\s*Ph", page_text, "Hashprice")
+    if v: result["hashprice_usd"] = v
+
+    # Total Hashrate
+    v = parse_float(r"Total Hashrate[\s\S]{0,10}([\d.]+)\s*Eh/s", page_text, "Total Hashrate")
+    if v: result["bmn_total_hashrate_eh"] = v
+
+    # Circulating BMN2
+    v = parse_float(r"Total Circulating BMN2[\s\S]{0,10}([\d,]+\.?\d*)", page_text, "Circulating")
+    if v: result["bmn_circulating"] = v
+
+    # Current Value per BMN2
+    v = parse_float(r"Current Value per BMN2[\s\S]{0,30}\$([\d,]+)", page_text, "Value/BMN2")
+    if v: result["bmn_value_per_token_usd"] = v
+
+    # ── Compute BMN2 term progress ────────────────────────────────────────────
+    today_date = date.today()
+    days_elapsed = (today_date - BMN2_START).days
+    days_remaining = (BMN2_END - today_date).days
+    result["bmn_term_day"] = days_elapsed
+    result["bmn_days_remaining"] = days_remaining
+    print(f"    [CALC] Term: Day {days_elapsed} of {BMN2_TOTAL_DAYS} ({days_remaining} remaining)")
+
+    # ── Compute BMN2 Value using official formula ─────────────────────────────
+    # BMN2 Value = (mined_per_token × btc_price) + (days_remaining × hashprice_per_ph)
+    mined  = result.get("bmn_mined_per_token_btc")
+    price  = result.get("btc_price")
+    hp     = result.get("hashprice_usd")
+
+    if mined and price and hp and days_remaining:
+        btc_value     = mined * price
+        forward_value = days_remaining * hp
+        bmn2_value    = round(btc_value + forward_value, 2)
+        result["bmn_value_per_token_usd"] = bmn2_value
+        print(f"    [CALC] BMN2 Value: ${bmn2_value:,.2f} = (₿{mined} × ${price:,.0f}) + ({days_remaining}d × ${hp})")
+    elif result.get("bmn_value_per_token_usd"):
+        print(f"    [DOM]  BMN2 Value: ${result['bmn_value_per_token_usd']:,.2f} (from page)")
 
     if not result:
-        print("  ✗ Could not parse any values from BMN2 dashboard")
+        print("  ✗ Could not extract any values")
     else:
-        print(f"  ✓ BMN2: {len(result)} fields scraped")
+        print(f"  ✓ BMN2: {len(result)} fields")
 
     return result
 
 
-# ── Luxor Pool API (GraphQL) ────────────────────────────────────────────────
+# ── Luxor Pool API (GraphQL) ─────────────────────────────────────────────────
 
 def fetch_luxor():
     """Query Luxor Mining Pool GraphQL API for BMN pool stats."""
-    api_key = os.environ.get("LUXOR_API_KEY", "")
+    api_key    = os.environ.get("LUXOR_API_KEY", "")
     subaccount = os.environ.get("LUXOR_SUBACCOUNT", "")
 
     if not api_key or not subaccount:
@@ -122,8 +210,7 @@ def fetch_luxor():
 
     print(f"  Querying Luxor API for subaccount '{subaccount}'...")
 
-    # Query 1: Mining summary (hashrate, revenue, active workers)
-    query_summary = """
+    query = """
     query {
         getMiningSummary(mpn: BTC, userName: "%s") {
             hashrate5m
@@ -137,9 +224,8 @@ def fetch_luxor():
     """ % subaccount
 
     result = {}
-
     try:
-        payload = json.dumps({"query": query_summary}).encode("utf-8")
+        payload = json.dumps({"query": query}).encode("utf-8")
         req = urllib.request.Request(
             "https://api.luxor.tech/graphql",
             data=payload,
@@ -155,230 +241,186 @@ def fetch_luxor():
 
         summary = data.get("data", {}).get("getMiningSummary", {})
         if summary:
-            # Hashrates come in H/s from the API — convert to EH/s
             if summary.get("hashrate5m"):
-                result["bmn_hashrate_5m_eh"] = round(summary["hashrate5m"] / 1e18, 3)
+                result["bmn_hashrate_5m_eh"]  = round(summary["hashrate5m"]  / 1e18, 3)
             if summary.get("hashrate24hr"):
                 result["bmn_hashrate_24h_eh"] = round(summary["hashrate24hr"] / 1e18, 3)
-            if summary.get("activeWorkers"):
-                result["bmn_active_miners"] = summary["activeWorkers"]
+            if summary.get("activeWorkers") is not None:
+                result["bmn_active_miners"]   = summary["activeWorkers"]
             if summary.get("uptimePercentage") is not None:
-                result["bmn_uptime_pct"] = round(summary["uptimePercentage"], 2)
+                result["bmn_uptime_pct"]      = round(summary["uptimePercentage"], 2)
             if summary.get("revenue24hr"):
-                # Revenue comes in satoshis — convert to BTC
-                result["bmn_revenue_btc"] = round(summary["revenue24hr"] / 1e8, 8)
-
-            print(f"  ✓ Luxor: {len(result)} fields fetched")
+                result["bmn_revenue_btc"]     = round(summary["revenue24hr"] / 1e8, 8)
+            print(f"  ✓ Luxor: {len(result)} fields")
             for k, v in result.items():
                 print(f"    {k}: {v}")
         else:
-            print(f"  ✗ Luxor API returned empty summary. Response: {json.dumps(data)[:500]}")
+            print(f"  ✗ Luxor returned empty. Response: {str(data)[:300]}")
 
     except Exception as e:
-        print(f"  ✗ Luxor API error: {e}")
+        print(f"  ✗ Luxor error: {e}")
 
     return result
 
 
-# ── STRC / Strategy Preferred Stock (yfinance) ──────────────────────────────
+# ── STRC / Strategy Preferred Stock (yfinance) ───────────────────────────────
 
 def fetch_strc():
     """Fetch STRC stock data from Yahoo Finance via yfinance."""
-    print("  Fetching STRC data from Yahoo Finance...")
+    print("  Fetching STRC (Nasdaq) via yfinance...")
     try:
         import yfinance as yf
     except ImportError:
-        print("  ✗ yfinance not installed. Run: pip install yfinance")
+        print("  ✗ yfinance not installed.")
         return {}
 
     result = {}
-
     try:
-        strc = yf.Ticker("STRC")
-        info = strc.info
+        ticker = yf.Ticker("STRC")
+        info   = ticker.info
 
-        # Current price
         price = info.get("currentPrice") or info.get("regularMarketPrice") or info.get("previousClose")
         if price:
-            result["strc_price"] = round(price, 2)
-            print(f"    Price: ${result['strc_price']}")
+            result["strc_price"] = round(float(price), 2)
 
-        # Dividend rate (annual %) — STRC is variable rate
         div_rate = info.get("dividendRate")
         if div_rate:
-            # dividendRate is annual $ amount per share; convert to % of $100 par
-            result["strc_dividend_pct"] = round(div_rate, 2)
-            print(f"    Dividend Rate: {result['strc_dividend_pct']}%")
+            result["strc_dividend_pct"] = round(float(div_rate), 2)
         else:
-            # Try dividend yield
             div_yield = info.get("dividendYield")
             if div_yield:
-                result["strc_dividend_pct"] = round(div_yield * 100, 2)
-                print(f"    Dividend Yield: {result['strc_dividend_pct']}%")
+                result["strc_dividend_pct"] = round(float(div_yield) * 100, 2)
 
-        # Market cap → notional in $M
         market_cap = info.get("marketCap")
         if market_cap:
             result["strc_notional_m"] = round(market_cap / 1e6, 1)
-            print(f"    Notional: ${result['strc_notional_m']}M")
 
-        # 30-day average volume in $M
         avg_vol = info.get("averageVolume")
         if avg_vol and price:
-            vol_30d_m = round((avg_vol * price) / 1e6, 1)
-            result["strc_vol_30d_m"] = vol_30d_m
-            print(f"    Avg Vol 30D: ${vol_30d_m}M")
+            result["strc_vol_30d_m"] = round((avg_vol * float(price)) / 1e6, 1)
 
-        # BTC Rating: compute from Strategy's BTC holdings
-        # Strategy (MSTR) holds BTC; BTC Rating ≈ (MSTR BTC per STRC share × BTC price) / STRC par
-        # We'll try to get this from MSTR info
-        try:
-            mstr = yf.Ticker("MSTR")
-            mstr_info = mstr.info
-            # Strategy's total BTC holdings are not directly in yfinance
-            # BTC Rating will be computed if we have the data, otherwise skipped
-            print("    BTC Rating: requires manual input or MSTR BTC holdings data (skipped)")
-        except Exception:
-            pass
-
-        if result:
-            print(f"  ✓ STRC: {len(result)} fields fetched")
-        else:
-            print("  ✗ Could not fetch STRC data from Yahoo Finance")
+        for k, v in result.items():
+            print(f"    {k}: {v}")
+        print(f"  ✓ STRC: {len(result)} fields")
 
     except Exception as e:
-        print(f"  ✗ STRC fetch error: {e}")
+        print(f"  ✗ STRC error: {e}")
 
     return result
 
 
-# ── Merge & Write ────────────────────────────────────────────────────────────
+# ── Merge & Write ─────────────────────────────────────────────────────────────
 
 def merge_into_manual_data(bmn2_data, luxor_data, strc_data):
-    """Merge scraped data into manual_data.json as a new daily entry."""
+    """Merge scraped data into manual_data.json, updating today's entry."""
 
-    # Load existing manual_data.json
     if os.path.exists(MANUAL_FILE):
         with open(MANUAL_FILE, "r") as f:
             manual = json.load(f)
     else:
         manual = {"updated": TODAY, "signal": "", "data": [], "hashprice_history": []}
 
-    # Check if today's entry already exists
     existing_dates = {e["date"] for e in manual["data"]}
     is_update = TODAY in existing_dates
 
-    # Build today's entry from all sources
+    # Start from yesterday's entry as base (carry forward stale fields)
     entry = {}
-
-    # Start with previous day's data as defaults (carry forward)
     if manual["data"]:
-        prev = manual["data"][-1]
-        entry = {k: v for k, v in prev.items()}
+        entry = {k: v for k, v in manual["data"][-1].items()}
     entry["date"] = TODAY
 
-    # Layer in BMN2 data
-    if bmn2_data.get("btc_price"):
-        entry["btc_price"] = bmn2_data["btc_price"]
-    if bmn2_data.get("hashprice_usd"):
-        entry["hashprice_usd"] = bmn2_data["hashprice_usd"]
-        # Derive hashprice_btc
-        if entry.get("btc_price") and entry["btc_price"] > 0:
-            entry["hashprice_btc"] = round(bmn2_data["hashprice_usd"] / entry["btc_price"], 5)
-    if bmn2_data.get("bmn_mined_per_token_btc"):
-        entry["bmn_mined_per_token_btc"] = bmn2_data["bmn_mined_per_token_btc"]
+    # Layer BMN2 data
+    for key in ["btc_price", "hashprice_usd", "bmn_mined_per_token_btc",
+                "bmn_total_hashrate_eh", "bmn_circulating",
+                "bmn_value_per_token_usd", "bmn_term_day", "bmn_days_remaining"]:
+        if key in bmn2_data:
+            entry[key] = bmn2_data[key]
 
-    # Layer in Luxor data
+    # Derive hashprice_btc
+    if entry.get("hashprice_usd") and entry.get("btc_price") and entry["btc_price"] > 0:
+        entry["hashprice_btc"] = round(entry["hashprice_usd"] / entry["btc_price"], 5)
+
+    # Layer Luxor data
     for key in ["bmn_hashrate_5m_eh", "bmn_hashrate_24h_eh", "bmn_active_miners",
                 "bmn_uptime_pct", "bmn_revenue_btc"]:
         if key in luxor_data:
             entry[key] = luxor_data[key]
 
-    # Layer in STRC data
+    # Layer STRC data
     for key in ["strc_price", "strc_dividend_pct", "strc_notional_m", "strc_vol_30d_m"]:
         if key in strc_data:
             entry[key] = strc_data[key]
 
-    # Network data (difficulty, hashrate) — carried from fetch_data.py / data.json
-    # Read latest from data.json if available
+    # Network data from data.json (difficulty, hashrate)
     data_json_path = os.path.join(SCRIPT_DIR, "data.json")
     if os.path.exists(data_json_path):
         with open(data_json_path, "r") as f:
-            auto_data = json.load(f)
-        if auto_data.get("network_history"):
-            latest_net = auto_data["network_history"][-1]
+            auto = json.load(f)
+        if auto.get("network_history"):
+            latest_net = auto["network_history"][-1]
             if "difficulty_t" in latest_net:
                 entry["difficulty"] = latest_net["difficulty_t"]
             if "network_hashrate_eh" in latest_net:
                 entry["network_hashrate_eh"] = latest_net["network_hashrate_eh"]
 
-    # Update or append
     if is_update:
         for i, e in enumerate(manual["data"]):
             if e["date"] == TODAY:
                 manual["data"][i] = entry
-                print(f"\n  Updated existing entry for {TODAY}")
+                print(f"  Updated entry for {TODAY}")
                 break
     else:
         manual["data"].append(entry)
-        print(f"\n  Added new entry for {TODAY}")
+        print(f"  Added new entry for {TODAY}")
 
     manual["updated"] = TODAY
 
-    # Write back
     with open(MANUAL_FILE, "w") as f:
         json.dump(manual, f, separators=(",", ":"))
 
     size_kb = os.path.getsize(MANUAL_FILE) / 1024
-    print(f"  Saved manual_data.json ({size_kb:.0f} KB, {len(manual['data'])} entries)")
-
+    print(f"  Saved {size_kb:.0f} KB — {len(manual['data'])} entries total")
     return entry
 
 
-# ── Main ─────────────────────────────────────────────────────────────────────
+# ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
-    print(f"=== STOKR Mining Dashboard — Manual Data Scraper ===")
+    print(f"=== STOKR Mining Dashboard — Data Scraper ===")
     print(f"Date: {TODAY}\n")
 
-    # 1. Scrape BMN2 Dashboard
-    print("[1/3] BMN2 Dashboard (Playwright):")
+    print("[1/3] BMN2 Dashboard (Playwright + network intercept):")
     bmn2_data = scrape_bmn2()
     print()
 
-    # 2. Fetch Luxor Pool Data
-    print("[2/3] Luxor Pool API:")
+    print("[2/3] Luxor Pool API (GraphQL):")
+    luxor_data = {} if SKIP_LUXOR else fetch_luxor()
     if SKIP_LUXOR:
-        print("  Skipped (--skip-luxor flag)")
-        luxor_data = {}
-    else:
-        luxor_data = fetch_luxor()
+        print("  Skipped (--skip-luxor)")
     print()
 
-    # 3. Fetch STRC Data
-    print("[3/3] STRC / Strategy Preferred (Yahoo Finance):")
+    print("[3/3] STRC / Strategy Preferred (yfinance):")
     strc_data = fetch_strc()
     print()
 
-    # Merge into manual_data.json
     print("Merging into manual_data.json:")
     entry = merge_into_manual_data(bmn2_data, luxor_data, strc_data)
 
-    # Summary
-    print(f"\n=== Done ===")
-    print(f"Entry for {TODAY}:")
+    print(f"\n=== Summary for {TODAY} ===")
     for k, v in sorted(entry.items()):
         print(f"  {k}: {v}")
 
-    # Report what's still missing
     expected = ["btc_price", "hashprice_btc", "hashprice_usd", "difficulty",
                 "network_hashrate_eh", "bmn_hashrate_5m_eh", "bmn_hashrate_24h_eh",
                 "bmn_active_miners", "bmn_uptime_pct", "bmn_revenue_btc",
-                "bmn_mined_per_token_btc", "strc_price", "strc_dividend_pct",
-                "strc_btc_rating", "strc_notional_m", "strc_vol_30d_m"]
-    missing = [k for k in expected if k not in entry or entry.get(k) is None]
+                "bmn_mined_per_token_btc", "bmn_value_per_token_usd",
+                "bmn_term_day", "bmn_days_remaining",
+                "strc_price", "strc_dividend_pct", "strc_notional_m", "strc_vol_30d_m"]
+    missing = [k for k in expected if not entry.get(k)]
     if missing:
-        print(f"\n  ⚠ Still missing/manual: {', '.join(missing)}")
+        print(f"\n  ⚠ Missing: {', '.join(missing)}")
+    else:
+        print(f"\n  ✓ All fields populated")
 
 
 if __name__ == "__main__":

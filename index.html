@@ -581,10 +581,10 @@ function renderKPIs() {
         },
         {
             label: 'BMN2 Value',
-            value: fmtCurrency(latest.bmn_mined_per_token_btc * latest.btc_price, 0),
+            value: latest.bmn_value_per_token_usd ? fmtCurrency(latest.bmn_value_per_token_usd, 0) : '—',
             valueClass: '',
-            change: prev ? pctChange(latest.bmn_mined_per_token_btc * latest.btc_price, prev.bmn_mined_per_token_btc * prev.btc_price) : null,
-            sub: '₿' + fmt(latest.bmn_mined_per_token_btc, 8) + ' × $' + fmt(latest.btc_price, 0)
+            change: prev?.bmn_value_per_token_usd ? pctChange(latest.bmn_value_per_token_usd, prev.bmn_value_per_token_usd) : null,
+            sub: latest.bmn_days_remaining ? 'Day ' + latest.bmn_term_day + ' of 1460 · ' + latest.bmn_days_remaining + 'd remaining' : 'Mined + forward mining value'
         },
         {
             label: 'STRC Price',
