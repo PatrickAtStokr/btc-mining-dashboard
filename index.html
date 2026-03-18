@@ -144,6 +144,7 @@
             border: 1px solid var(--card-border);
             border-radius: 12px;
             padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
 
         .chart-card.full-width {
@@ -579,6 +580,13 @@ function renderKPIs() {
             sub: fmtCurrency(latest.bmn_mined_per_token_btc * latest.btc_price, 2)
         },
         {
+            label: 'BMN2 Value',
+            value: fmtCurrency(latest.bmn_mined_per_token_btc * latest.btc_price, 0),
+            valueClass: '',
+            change: prev ? pctChange(latest.bmn_mined_per_token_btc * latest.btc_price, prev.bmn_mined_per_token_btc * prev.btc_price) : null,
+            sub: '₿' + fmt(latest.bmn_mined_per_token_btc, 8) + ' × $' + fmt(latest.btc_price, 0)
+        },
+        {
             label: 'STRC Price',
             value: fmtCurrency(latest.strc_price, 2),
             valueClass: latest.strc_price >= 100 ? '' : 'white',
@@ -623,13 +631,41 @@ function renderSignal() {
     }
 }
 
+// ===== CROSSHAIR PLUGIN =====
+const crosshairPlugin = {
+    id: 'crosshair',
+    afterDraw(chart) {
+        if (chart.tooltip?._active?.length) {
+            const x = chart.tooltip._active[0].element.x;
+            const yAxis = chart.scales.y;
+            const ctx = chart.ctx;
+            ctx.save();
+            ctx.beginPath();
+            ctx.setLineDash([4, 4]);
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+            ctx.moveTo(x, yAxis.top);
+            ctx.lineTo(x, yAxis.bottom);
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+};
+Chart.register(crosshairPlugin);
+
 // ===== CHART DEFAULTS =====
 const chartDefaults = {
     responsive: true,
     maintainAspectRatio: false,
+    interaction: {
+        mode: 'index',
+        intersect: false
+    },
     plugins: {
         legend: { display: false },
         tooltip: {
+            mode: 'index',
+            intersect: false,
             backgroundColor: '#1a1a1a',
             titleColor: '#F2F2F2',
             bodyColor: '#F2F2F2',
@@ -720,13 +756,13 @@ function renderCharts() {
                 labels: btcLabels,
                 datasets: [{
                     data: btcThinned.map(d => d.btc_price),
-                    borderColor: '#FFFFFF',
-                    backgroundColor: makeGradient(ctxBtc, 'rgba(255,255,255,0.1)', 'rgba(255,255,255,0)'),
+                    borderColor: '#F7931A',
+                    backgroundColor: makeGradient(ctxBtc, 'rgba(247,147,26,0.2)', 'rgba(247,147,26,0)'),
                     borderWidth: longRange ? 1.5 : 2,
                     fill: true, tension: 0.3,
                     pointRadius: longRange ? 0 : 3,
                     pointHitRadius: 8,
-                    pointBackgroundColor: '#FFFFFF', pointBorderColor: '#0A0A0A', pointBorderWidth: 2
+                    pointBackgroundColor: '#F7931A', pointBorderColor: '#0A0A0A', pointBorderWidth: 2
                 }]
             },
             options: {
@@ -833,7 +869,7 @@ function renderCharts() {
             },
             scales: {
                 x: chartDefaults.scales.x,
-                y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => '$' + v }, position: 'left' },
+                y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => '$' + v.toFixed(2) }, position: 'left' },
                 y1: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + 'x' }, position: 'right', grid: { display: false } }
             }
         }
@@ -1027,16 +1063,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.warn('Could not load manual_data.json', e);
     }
 
-    // Merge hashprice sources: manual Luxor data as base, automated derived values
-    // take precedence for any date they cover — extends the chart to today automatically.
-    if (autoHashprice.length > 0) {
+    // Merge hashprice sources (priority: DATA entries > Luxor export > derived estimate)
+    // 1. Derived (subsidy-only) as lowest priority base
+    // 2. Luxor historical export overwrites derived where both exist
+    // 3. DATA entries (Luxor actual from BMN2 dashboard) take highest priority for recent dates
+    {
         const merged = {};
-        HASHPRICE_HISTORY.forEach(d => { merged[d.date] = d.hashprice_usd; });
         autoHashprice.forEach(d => { merged[d.date] = d.hashprice_usd; });
+        HASHPRICE_HISTORY.forEach(d => { merged[d.date] = d.hashprice_usd; });
+        DATA.forEach(d => { if (d.hashprice_usd) merged[d.date] = d.hashprice_usd; });
         HASHPRICE_HISTORY = Object.entries(merged)
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([date, hashprice_usd]) => ({ date, hashprice_usd }));
-        console.log('Merged hashprice history:', HASHPRICE_HISTORY.length, 'days');
+        console.log('Merged hashprice history:', HASHPRICE_HISTORY.length, 'days (derived → Luxor export → DATA)');
     }
 
     // Initialize filtered arrays and render
