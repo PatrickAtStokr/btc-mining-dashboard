@@ -210,7 +210,7 @@ def fetch_luxor():
     Falls back to DOM text parsing if no API responses are captured.
     """
     subaccount = os.environ.get("LUXOR_SUBACCOUNT", "") or "BMN"
-    url = f"https://mining.luxor.tech/miners/bitcoin/{subaccount}"
+    url = f"https://mining.luxor.tech/mining/bitcoin?user={subaccount}"
     print(f"  Loading Luxor dashboard: {url}")
 
     try:
@@ -318,8 +318,8 @@ def fetch_luxor():
             if summary.get("sharesEfficiency") is not None:
                 result["bmn_shares_efficiency_pct"] = round(summary["sharesEfficiency"], 2)
 
-    # ── DOM text fallback ─────────────────────────────────────────────────────
-    if not result and page_text:
+    # ── DOM text parsing (always run — complements API data) ─────────────────
+    if page_text:
         print("  Falling back to DOM text parsing...")
 
         def _re(pattern, text, cast=float):
@@ -332,19 +332,19 @@ def fetch_luxor():
             return None
 
         v = _re(r'(?:Hashrate|Hash Rate)\s*[\s\S]{0,20}?5\s*[Mm]in[\s\S]{0,30}?([\d.]+)\s*EH', page_text)
-        if v: result["bmn_hashrate_5m_eh"] = v
+        if v and "bmn_hashrate_5m_eh" not in result: result["bmn_hashrate_5m_eh"] = v
 
         v = _re(r'(?:Hashrate|Hash Rate)\s*[\s\S]{0,20}?24[\s\S]{0,30}?([\d.]+)\s*EH', page_text)
-        if v: result["bmn_hashrate_24h_eh"] = v
+        if v and "bmn_hashrate_24h_eh" not in result: result["bmn_hashrate_24h_eh"] = v
 
         v = _re(r'Active\s*(?:Miners?|Workers?)\s*[\s\S]{0,20}?([\d,]+)', page_text, int)
-        if v: result["bmn_active_miners"] = v
+        if v and "bmn_active_miners" not in result: result["bmn_active_miners"] = v
 
         v = _re(r'Uptime\s*[\s\S]{0,30}?([\d.]+)\s*%', page_text)
-        if v: result["bmn_uptime_pct"] = v
+        if v and "bmn_uptime_pct" not in result: result["bmn_uptime_pct"] = v
 
         v = _re(r'Revenue\s*[\s\S]{0,30}?([\d.]+)\s*BTC', page_text)
-        if v: result["bmn_revenue_btc"] = v
+        if v and "bmn_revenue_btc" not in result: result["bmn_revenue_btc"] = v
 
     if result:
         print(f"  ✓ Luxor: {len(result)} fields")
