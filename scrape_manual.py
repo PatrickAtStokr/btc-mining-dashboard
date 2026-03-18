@@ -197,68 +197,166 @@ def scrape_bmn2():
     return result
 
 
-# ── Luxor Pool API (GraphQL) ─────────────────────────────────────────────────
+# ── Luxor Pool Data ──────────────────────────────────────────────────────────
 
 def fetch_luxor():
-    """Query Luxor Mining Pool GraphQL API for BMN pool stats."""
+    """
+    Fetch Luxor Mining Pool stats for the BMN subaccount.
+
+    Strategy (most reliable → least):
+      1. Authenticated GraphQL (LUXOR_API_KEY + LUXOR_SUBACCOUNT set as GitHub Secrets)
+      2. Public GraphQL  (getPublicMiningSummary — no key needed)
+      3. HTML scrape of the public dashboard page
+
+    This means the scraper works even before the API key is configured.
+    """
     api_key    = os.environ.get("LUXOR_API_KEY", "")
-    subaccount = os.environ.get("LUXOR_SUBACCOUNT", "")
+    subaccount = os.environ.get("LUXOR_SUBACCOUNT", "") or "BMN"  # default to BMN
 
-    if not api_key or not subaccount:
-        print("  ⚠ LUXOR_API_KEY or LUXOR_SUBACCOUNT not set — skipping Luxor")
-        return {}
+    result = {}
 
-    print(f"  Querying Luxor API for subaccount '{subaccount}'...")
+    def _parse_summary(summary, is_authed=False):
+        """Convert a Luxor summary dict into our field names."""
+        out = {}
+        if summary.get("hashrate5m"):
+            out["bmn_hashrate_5m_eh"]  = round(summary["hashrate5m"]  / 1e18, 3)
+        if summary.get("hashrate24hr"):
+            out["bmn_hashrate_24h_eh"] = round(summary["hashrate24hr"] / 1e18, 3)
+        if summary.get("activeWorkers") is not None:
+            out["bmn_active_miners"]   = summary["activeWorkers"]
+        if summary.get("uptimePercentage") is not None:
+            out["bmn_uptime_pct"]      = round(summary["uptimePercentage"], 2)
+        if summary.get("revenue24hr"):
+            out["bmn_revenue_btc"]     = round(summary["revenue24hr"] / 1e8, 8)
+        if summary.get("sharesEfficiency") is not None:
+            out["bmn_shares_efficiency_pct"] = round(summary["sharesEfficiency"], 2)
+        return out
 
-    query = """
+    # ── Attempt 1: Authenticated GraphQL ────────────────────────────────────
+    if api_key:
+        print(f"  [Luxor] Authenticated GraphQL for '{subaccount}'...")
+        query = """
+        query {
+            getMiningSummary(mpn: BTC, userName: "%s") {
+                hashrate5m
+                hashrate1hr
+                hashrate24hr
+                activeWorkers
+                revenue24hr
+                uptimePercentage
+                sharesEfficiency
+            }
+        }
+        """ % subaccount
+        try:
+            payload = json.dumps({"query": query}).encode("utf-8")
+            req = urllib.request.Request(
+                "https://api.luxor.tech/graphql",
+                data=payload,
+                headers={
+                    "Content-Type": "application/json",
+                    "x-lux-api-key": api_key,
+                    "User-Agent": "STOKR-Mining-Intel/1.0",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=30, context=SSL_CTX) as resp:
+                data = json.loads(resp.read().decode())
+            summary = data.get("data", {}).get("getMiningSummary", {})
+            if summary:
+                result = _parse_summary(summary, is_authed=True)
+                print(f"  ✓ Luxor (authenticated): {len(result)} fields")
+                for k, v in result.items():
+                    print(f"    {k}: {v}")
+                return result
+            else:
+                print(f"  ✗ Luxor auth returned empty: {str(data)[:200]}")
+        except Exception as e:
+            print(f"  ✗ Luxor auth error: {e}")
+
+    # ── Attempt 2: Public GraphQL (no key) ───────────────────────────────────
+    print(f"  [Luxor] Public GraphQL for '{subaccount}'...")
+    query_public = """
     query {
-        getMiningSummary(mpn: BTC, userName: "%s") {
+        getPublicMiningSummary(mpn: BTC, userName: "%s") {
             hashrate5m
-            hashrate1hr
             hashrate24hr
             activeWorkers
             revenue24hr
             uptimePercentage
+            sharesEfficiency
         }
     }
     """ % subaccount
-
-    result = {}
     try:
-        payload = json.dumps({"query": query}).encode("utf-8")
+        payload = json.dumps({"query": query_public}).encode("utf-8")
         req = urllib.request.Request(
             "https://api.luxor.tech/graphql",
             data=payload,
             headers={
                 "Content-Type": "application/json",
-                "x-lux-api-key": api_key,
                 "User-Agent": "STOKR-Mining-Intel/1.0",
             },
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=30, context=SSL_CTX) as resp:
             data = json.loads(resp.read().decode())
-
-        summary = data.get("data", {}).get("getMiningSummary", {})
+        summary = data.get("data", {}).get("getPublicMiningSummary", {})
         if summary:
-            if summary.get("hashrate5m"):
-                result["bmn_hashrate_5m_eh"]  = round(summary["hashrate5m"]  / 1e18, 3)
-            if summary.get("hashrate24hr"):
-                result["bmn_hashrate_24h_eh"] = round(summary["hashrate24hr"] / 1e18, 3)
-            if summary.get("activeWorkers") is not None:
-                result["bmn_active_miners"]   = summary["activeWorkers"]
-            if summary.get("uptimePercentage") is not None:
-                result["bmn_uptime_pct"]      = round(summary["uptimePercentage"], 2)
-            if summary.get("revenue24hr"):
-                result["bmn_revenue_btc"]     = round(summary["revenue24hr"] / 1e8, 8)
-            print(f"  ✓ Luxor: {len(result)} fields")
+            result = _parse_summary(summary)
+            print(f"  ✓ Luxor (public GraphQL): {len(result)} fields")
+            for k, v in result.items():
+                print(f"    {k}: {v}")
+            return result
+        else:
+            print(f"  ✗ Luxor public GraphQL returned empty: {str(data)[:200]}")
+    except Exception as e:
+        print(f"  ✗ Luxor public GraphQL error: {e}")
+
+    # ── Attempt 3: HTML scrape of public dashboard ───────────────────────────
+    print(f"  [Luxor] Falling back to HTML scrape...")
+    try:
+        url = f"https://mining.luxor.tech/mining/bitcoin?user={subaccount}"
+        req = urllib.request.Request(url, headers={"User-Agent": "STOKR-Mining-Intel/1.0"})
+        with urllib.request.urlopen(req, timeout=30, context=SSL_CTX) as resp:
+            html = resp.read().decode("utf-8", errors="ignore")
+
+        def _re(pattern, text, cast=float):
+            m = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
+            if m:
+                try:
+                    return cast(m.group(1).replace(",", ""))
+                except Exception:
+                    pass
+            return None
+
+        v = _re(r'Hashrate\s*\(?5\s*min\)?\s*[\s\S]{0,50}?([\d.]+)\s*EH/s', html)
+        if v: result["bmn_hashrate_5m_eh"] = v
+
+        v = _re(r'Hashrate\s*\(?24\s*hour\)?\s*[\s\S]{0,50}?([\d.]+)\s*EH/s', html)
+        if v: result["bmn_hashrate_24h_eh"] = v
+
+        v = _re(r'Active\s*[Mm]iners?\s*[\s\S]{0,30}?([\d,]+)(?:\s|<)', html, int)
+        if v: result["bmn_active_miners"] = v
+
+        v = _re(r'Uptime\s*\(?24\s*hour\)?\s*[\s\S]{0,30}?([\d.]+)\s*%', html)
+        if v: result["bmn_uptime_pct"] = v
+
+        v = _re(r'Revenue\s*\(?24\s*hour\)?\s*[\s\S]{0,50}?([\d.]+)\s*BTC', html)
+        if v: result["bmn_revenue_btc"] = v
+
+        v = _re(r'(?:Shares|Share)\s*Efficiency\s*[\s\S]{0,30}?([\d.]+)\s*%', html)
+        if v: result["bmn_shares_efficiency_pct"] = v
+
+        if result:
+            print(f"  ✓ Luxor (HTML scrape): {len(result)} fields")
             for k, v in result.items():
                 print(f"    {k}: {v}")
         else:
-            print(f"  ✗ Luxor returned empty. Response: {str(data)[:300]}")
+            print("  ✗ Luxor HTML scrape: no values extracted")
 
     except Exception as e:
-        print(f"  ✗ Luxor error: {e}")
+        print(f"  ✗ Luxor HTML scrape error: {e}")
 
     return result
 
