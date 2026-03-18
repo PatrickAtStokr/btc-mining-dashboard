@@ -241,12 +241,32 @@ def fetch_luxor():
 
     try:
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
+            browser = p.chromium.launch(
+                headless=True,
+                args=[
+                    "--no-sandbox",
+                    "--disable-blink-features=AutomationControlled",
+                    "--disable-dev-shm-usage",
+                ]
+            )
+            context = browser.new_context(
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/122.0.0.0 Safari/537.36"
+                ),
+                viewport={"width": 1280, "height": 800},
+                locale="en-US",
+            )
+            page = context.new_page()
+            # Remove webdriver flag that sites use to detect automation
+            page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
             page.on("response", handle_response)
-            page.goto(url, wait_until="networkidle", timeout=60000)
-            page.wait_for_timeout(5000)
+            page.goto(url, wait_until="domcontentloaded", timeout=60000)
+            page.wait_for_timeout(8000)   # extra time for React to render
             page_text = page.inner_text("body")
+            final_url = page.url
+            print(f"  Final URL after navigation: {final_url}")
             browser.close()
     except Exception as e:
         print(f"  ✗ Playwright error: {e}")
