@@ -254,6 +254,16 @@ def fetch_luxor():
 
     print(f"  Captured {len(captured)} API responses, {len(page_text)} chars of page text")
 
+    # ── Print all captured responses for diagnostics ──────────────────────────
+    for i, cap in enumerate(captured):
+        body_str = json.dumps(cap["data"])
+        print(f"  [resp {i}] {cap['url'][:100]}")
+        print(f"  [resp {i}] body: {body_str[:500]}")
+
+    # ── Also print first 500 chars of page text for diagnostics ──────────────
+    if page_text:
+        print(f"  [pagetext] {page_text[:500]}")
+
     # ── Extract from intercepted API responses ────────────────────────────────
     def deep_get(obj, keys, depth=0):
         found = {}
