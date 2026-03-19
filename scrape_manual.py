@@ -199,111 +199,111 @@ def scrape_bmn2():
 
 # ── Luxor Pool Data ──────────────────────────────────────────────────────────
 
+# BMN subaccount IDs from the public Luxor watcher view (watcherV2.getKpi)
+BMN_SUBACCOUNT_IDS = [
+    1159344, 1164940, 1165207, 1166386, 1166705, 1168281, 1169205, 1170074,
+    1170223, 1170298, 1171775, 1171859, 1173258, 1173990, 1174106, 1174442,
+    1174461, 1174471
+]
+
 def fetch_luxor():
     """
-    Fetch Luxor Mining Pool stats via plain HTTP — same logic as fetch_luxor.py
-    which Patrick confirmed works locally.
+    Fetch Luxor BMN pool stats via the public tRPC watcher API.
 
-    1. Try public GraphQL endpoint (no auth)
-    2. Fall back to HTML scrape of the public dashboard
+    Replicates the exact call the Luxor watcher dashboard makes:
+    POST https://app.luxor.tech/api/trpc/watcherV2.getKpi?batch=1
+    with kpiType=5 (summary KPIs) — no auth required (workspaceId is empty).
+
+    Subaccount IDs are fixed for the BMN pool.
     """
-    subaccount = os.environ.get("LUXOR_SUBACCOUNT", "") or "BMN"
-    print(f"  Fetching Luxor data for subaccount: {subaccount}")
+    import time as _time
 
-    result = {}
+    print("  [Luxor] Calling watcher tRPC API (kpiType=5 summary)...")
 
-    # ── Attempt 1: Public GraphQL ─────────────────────────────────────────────
-    try:
-        print("  [Luxor] Trying GraphQL endpoint...")
-        query = """
-        query {
-            getPublicMiningSummary(mpn: BTC, userName: "%s") {
-                hashrate5m
-                hashrate24hr
-                activeWorkers
-                revenue24hr
-                uptimePercentage
-                sharesEfficiency
+    now = int(_time.time())
+
+    payload = {
+        "0": {
+            "json": {
+                "currencyProfile": 1,
+                "workspaceId": "",
+                "kpiType": 5,
+                "subaccounts": {
+                    "ids": BMN_SUBACCOUNT_IDS,
+                    "names": []
+                }
             }
         }
-        """ % subaccount
-        payload = json.dumps({"query": query}).encode("utf-8")
+    }
+
+    result = {}
+    try:
         req = urllib.request.Request(
-            "https://api.luxor.tech/graphql",
-            data=payload,
-            headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"},
+            "https://app.luxor.tech/api/trpc/watcherV2.getKpi?batch=1",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Origin": "https://app.luxor.tech",
+                "Referer": "https://app.luxor.tech/",
+            },
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=30, context=SSL_CTX) as resp:
-            data = json.loads(resp.read().decode())
-        summary = data.get("data", {}).get("getPublicMiningSummary", {})
-        if summary:
-            if summary.get("hashrate5m"):
-                result["bmn_hashrate_5m_eh"]  = round(summary["hashrate5m"] / 1e18, 3)
-            if summary.get("hashrate24hr"):
-                result["bmn_hashrate_24h_eh"] = round(summary["hashrate24hr"] / 1e18, 3)
-            if summary.get("activeWorkers"):
-                result["bmn_active_miners"]   = summary["activeWorkers"]
-            if summary.get("uptimePercentage") is not None:
-                result["bmn_uptime_pct"]      = round(summary["uptimePercentage"], 2)
-            if summary.get("revenue24hr"):
-                result["bmn_revenue_btc"]     = round(summary["revenue24hr"] / 1e8, 8)
-            if summary.get("sharesEfficiency") is not None:
-                result["bmn_shares_efficiency_pct"] = round(summary["sharesEfficiency"], 2)
-            if result:
-                print(f"  ✓ Luxor (GraphQL): {len(result)} fields")
-                for k, v in result.items():
-                    print(f"    {k}: {v}")
-                return result
-        print(f"  [Luxor] GraphQL returned empty: {str(data)[:200]}")
-    except Exception as e:
-        print(f"  [Luxor] GraphQL failed ({type(e).__name__}: {e}), trying HTML...")
+            raw = resp.read().decode()
 
-    # ── Attempt 2: HTML scrape ────────────────────────────────────────────────
-    try:
-        print("  [Luxor] Fetching dashboard HTML...")
-        url = f"https://mining.luxor.tech/mining/bitcoin?user={subaccount}"
-        req = urllib.request.Request(
-            url,
-            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
-        )
-        with urllib.request.urlopen(req, timeout=30, context=SSL_CTX) as resp:
-            html = resp.read().decode("utf-8", errors="ignore")
+        print(f"  [Luxor] Raw response (first 800 chars): {raw[:800]}")
 
-        print(f"  [Luxor] Got {len(html)} bytes of HTML")
+        data = json.loads(raw)
 
-        def _re(pattern, text, cast=float):
-            m = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
-            if m:
-                try:
-                    return cast(m.group(1).replace(",", ""))
-                except Exception:
-                    pass
-            return None
+        # tRPC batch response is a list: [{result: {data: {json: ...}}}]
+        if isinstance(data, list) and data:
+            inner = data[0].get("result", {}).get("data", {})
+            # Handle tRPC v10 envelope
+            if "json" in inner:
+                inner = inner["json"]
 
-        v = _re(r'Hashrate\s*\(?5\s*min\)?\s*[\s\S]{0,50}?([\d.]+)\s*EH/s', html)
-        if v: result["bmn_hashrate_5m_eh"] = v
+            print(f"  [Luxor] Parsed inner keys: {list(inner.keys()) if isinstance(inner, dict) else type(inner)}")
 
-        v = _re(r'Hashrate\s*\(?24\s*hour\)?\s*[\s\S]{0,50}?([\d.]+)\s*EH/s', html)
-        if v: result["bmn_hashrate_24h_eh"] = v
+            # Extract fields — print everything so we can see the structure
+            if isinstance(inner, dict):
+                for k, v in inner.items():
+                    print(f"  [Luxor]   {k}: {v}")
 
-        v = _re(r'Active\s*miners?\s*[\s\S]{0,30}?([\d]+)(?:\s|<)', html, int)
-        if v: result["bmn_active_miners"] = v
+                # Common field name patterns from Luxor tRPC responses
+                def _get(*keys):
+                    for k in keys:
+                        if k in inner and inner[k] is not None:
+                            return inner[k]
+                    return None
 
-        v = _re(r'Uptime\s*\(?24\s*hour\)?\s*[\s\S]{0,30}?([\d.]+)\s*%', html)
-        if v: result["bmn_uptime_pct"] = v
+                hr5m = _get("hashrate5m", "hashrate5Min", "fiveMinHashrate", "averageHashrate5m")
+                if hr5m is not None:
+                    result["bmn_hashrate_5m_eh"] = round(float(hr5m) / 1e18, 3)
 
-        v = _re(r'Revenue\s*\(?24\s*hour\)?\s*[\s\S]{0,50}?([\d.]+)\s*BTC', html)
-        if v: result["bmn_revenue_btc"] = v
+                hr24 = _get("hashrate24hr", "hashrate24h", "averageHashrate24h", "dailyHashrate")
+                if hr24 is not None:
+                    result["bmn_hashrate_24h_eh"] = round(float(hr24) / 1e18, 3)
 
-        v = _re(r'(?:Shares|Share)\s*Efficiency\s*[\s\S]{0,30}?([\d.]+)\s*%', html)
-        if v: result["bmn_shares_efficiency_pct"] = v
+                workers = _get("activeWorkers", "workers", "onlineWorkers", "totalWorkers")
+                if workers is not None:
+                    result["bmn_active_miners"] = int(workers)
+
+                uptime = _get("uptimePercentage", "uptime", "uptimePct")
+                if uptime is not None:
+                    result["bmn_uptime_pct"] = round(float(uptime), 2)
+
+                rev = _get("revenue24hr", "revenue", "dailyRevenue", "btcRevenue")
+                if rev is not None:
+                    # Revenue may be in satoshis or BTC depending on currencyProfile
+                    rev_f = float(rev)
+                    result["bmn_revenue_btc"] = round(rev_f / 1e8, 8) if rev_f > 1000 else round(rev_f, 8)
 
     except Exception as e:
-        print(f"  [Luxor] HTML fetch failed: {e}")
+        print(f"  [Luxor] tRPC call failed: {type(e).__name__}: {e}")
 
     if result:
-        print(f"  ✓ Luxor (HTML): {len(result)} fields")
+        print(f"  ✓ Luxor: {len(result)} fields")
         for k, v in result.items():
             print(f"    {k}: {v}")
     else:
