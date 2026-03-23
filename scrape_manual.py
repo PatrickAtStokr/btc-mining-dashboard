@@ -314,15 +314,86 @@ def fetch_luxor():
 
 # ── STRC / Strategy Preferred Stock ──────────────────────────────────────────
 
+def fetch_strc_shares_outstanding():
+    """
+    Fetch STRC preferred shares outstanding from SEC EDGAR XBRL API.
+    Strategy (formerly MicroStrategy) CIK: 0001050446
+
+    The EDGAR companyfacts endpoint returns all XBRL-tagged financial data.
+    We look for PreferredStockSharesOutstanding and filter for STRC-specific
+    entries (Series A Perpetual Strife Preferred Stock).
+
+    Returns: int (shares outstanding) or None if unavailable.
+    """
+    print("  [STRC] Fetching shares outstanding from SEC EDGAR...")
+    try:
+        # SEC EDGAR requires a User-Agent with contact info
+        req = urllib.request.Request(
+            "https://data.sec.gov/api/xbrl/companyfacts/CIK0001050446.json",
+            headers={
+                "User-Agent": "STOKR-Mining-Intel/1.0 (patrick@stokr.io)",
+                "Accept": "application/json",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=30, context=SSL_CTX) as resp:
+            data = json.loads(resp.read().decode())
+
+        usgaap = data.get("facts", {}).get("us-gaap", {})
+
+        # Look for preferred shares outstanding
+        for key in ["PreferredStockSharesOutstanding", "PreferredStockSharesIssued"]:
+            concept = usgaap.get(key, {})
+            entries = concept.get("units", {}).get("shares", [])
+            if not entries:
+                continue
+
+            # Filter to most recent 10-Q/10-K filing, prefer entries that
+            # mention STRC or Series A in their frame/dimension
+            # Sort by end date descending to get most recent
+            entries_sorted = sorted(entries, key=lambda x: x.get("end", ""), reverse=True)
+
+            # Take the most recent value — Strategy only has one preferred class (STRC)
+            for entry in entries_sorted:
+                val = entry.get("val")
+                end_date = entry.get("end", "")
+                form = entry.get("form", "")
+                if val and val > 0:
+                    print(f"  [STRC] {key}: {val:,.0f} shares (as of {end_date}, {form})")
+                    return int(val)
+
+        # Fallback: try dei namespace (some filers report here)
+        dei = data.get("facts", {}).get("dei", {})
+        for key in ["EntityCommonStockSharesOutstanding"]:
+            concept = dei.get(key, {})
+            entries = concept.get("units", {}).get("shares", [])
+            if entries:
+                entries_sorted = sorted(entries, key=lambda x: x.get("end", ""), reverse=True)
+                if entries_sorted:
+                    val = entries_sorted[0].get("val")
+                    if val:
+                        print(f"  [STRC] dei:{key}: {val:,.0f} shares (common, not preferred)")
+
+        print("  [STRC] Could not find preferred shares outstanding in EDGAR")
+        return None
+
+    except Exception as e:
+        print(f"  [STRC] EDGAR API failed: {type(e).__name__}: {e}")
+        return None
+
+
 def fetch_strc():
     """
-    Fetch STRC data from Strategy's own public API.
+    Fetch STRC data from Strategy's own public API + SEC EDGAR for shares outstanding.
     Primary: https://api.strategy.com/btc/getPreferreds (no auth required)
+    Shares: SEC EDGAR XBRL API (CIK 0001050446)
     Fallback: yfinance for price if the API is unavailable.
+
+    STRC Notional = shares_outstanding × price
     """
     print("  Fetching STRC from api.strategy.com...")
 
     result = {}
+    strc_price = None
 
     # ── Primary: Strategy public API ─────────────────────────────────────────
     try:
@@ -337,7 +408,8 @@ def fetch_strc():
         strc = next((x for x in data if x.get("company") == "STRC"), None)
         if strc:
             if strc.get("price"):
-                result["strc_price"] = round(float(strc["price"]), 2)
+                strc_price = round(float(strc["price"]), 2)
+                result["strc_price"] = strc_price
             if strc.get("currentDividend"):
                 result["strc_dividend_pct"] = round(float(strc["currentDividend"]), 2)
             if strc.get("btcRating"):
@@ -348,30 +420,42 @@ def fetch_strc():
             print(f"  ✓ STRC (Strategy API): {len(result)} fields")
             for k, v in result.items():
                 print(f"    {k}: {v}")
-            return result
         else:
             print("  ✗ STRC not found in Strategy API response")
 
     except Exception as e:
         print(f"  [STRC] Strategy API failed ({e}), falling back to yfinance...")
+        # Fallback: yfinance for price
+        try:
+            import yfinance as yf
+            ticker = yf.Ticker("STRC")
+            info   = ticker.info
+            price  = info.get("currentPrice") or info.get("regularMarketPrice") or info.get("previousClose")
+            if price:
+                strc_price = round(float(price), 2)
+                result["strc_price"] = strc_price
+            div_rate = info.get("dividendRate")
+            if div_rate:
+                result["strc_dividend_pct"] = round(float(div_rate), 2)
+            avg_vol = info.get("averageVolume")
+            if avg_vol and price:
+                result["strc_vol_30d_m"] = round((avg_vol * float(price)) / 1e6, 1)
+            print(f"  ✓ STRC (yfinance fallback): {len(result)} fields")
+        except Exception as e2:
+            print(f"  ✗ STRC yfinance also failed: {e2}")
 
-    # ── Fallback: yfinance ────────────────────────────────────────────────────
-    try:
-        import yfinance as yf
-        ticker = yf.Ticker("STRC")
-        info   = ticker.info
-        price  = info.get("currentPrice") or info.get("regularMarketPrice") or info.get("previousClose")
-        if price:
-            result["strc_price"] = round(float(price), 2)
-        div_rate = info.get("dividendRate")
-        if div_rate:
-            result["strc_dividend_pct"] = round(float(div_rate), 2)
-        avg_vol = info.get("averageVolume")
-        if avg_vol and price:
-            result["strc_vol_30d_m"] = round((avg_vol * float(price)) / 1e6, 1)
-        print(f"  ✓ STRC (yfinance fallback): {len(result)} fields")
-    except Exception as e:
-        print(f"  ✗ STRC error: {e}")
+    # ── Shares outstanding from SEC EDGAR → compute notional ─────────────────
+    shares = fetch_strc_shares_outstanding()
+    if shares and strc_price:
+        notional_m = round((shares * strc_price) / 1e6, 1)
+        result["strc_notional_m"] = notional_m
+        result["strc_shares_outstanding"] = shares
+        print(f"  ✓ STRC Notional: ${notional_m:,.1f}M ({shares:,} shares × ${strc_price})")
+    elif shares:
+        result["strc_shares_outstanding"] = shares
+        print(f"  [STRC] Got shares ({shares:,}) but no price — cannot compute notional")
+    else:
+        print("  [STRC] No shares outstanding data — notional not computed")
 
     return result
 
