@@ -383,17 +383,50 @@ def fetch_strc_shares_outstanding():
 
 def fetch_strc():
     """
-    Fetch STRC data from Strategy's own public API + SEC EDGAR for shares outstanding.
-    Primary: https://api.strategy.com/btc/getPreferreds (no auth required)
-    Shares: SEC EDGAR XBRL API (CIK 0001050446)
-    Fallback: yfinance for price if the API is unavailable.
-
-    STRC Notional = shares_outstanding × price
+    Fetch STRC data from Strategy KPI API.
+    Replaces EDGAR-derived notional with direct API value.
     """
-    print("  Fetching STRC from api.strategy.com...")
+    print("  Fetching STRC from api.strategy.com (KPI endpoint)...")
 
     result = {}
-    strc_price = None
+
+    try:
+        req = urllib.request.Request(
+            "https://api.strategy.com/btc/strcKpiData",
+            headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
+        )
+
+        with urllib.request.urlopen(req, timeout=30, context=SSL_CTX) as resp:
+            data = json.loads(resp.read().decode())
+
+        if isinstance(data, list) and data:
+            row = data[0]
+
+            # --- Core fields (unchanged structure) ---
+            if row.get("price"):
+                result["strc_price"] = round(float(row["price"]), 2)
+
+            if row.get("currentDividend"):
+                result["strc_dividend_pct"] = round(float(row["currentDividend"]), 2)
+
+            if row.get("averageVolume"):
+                result["strc_vol_30d_m"] = round(float(row["averageVolume"]), 1)
+
+            # --- ✅ REPLACEMENT: direct notional ---
+            if row.get("notional"):
+                result["strc_notional_m"] = round(float(row["notional"]) / 1e6, 1)
+
+            print(f"  ✓ STRC (KPI API): {len(result)} fields")
+            for k, v in result.items():
+                print(f"    {k}: {v}")
+
+        else:
+            print("  ✗ STRC API returned empty or invalid data")
+
+    except Exception as e:
+        print(f"  ✗ STRC API failed: {type(e).__name__}: {e}")
+
+    return result
 
     # ── Primary: Strategy public API ─────────────────────────────────────────
     try:
