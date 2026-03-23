@@ -340,9 +340,12 @@ def fetch_strc():
             if div_yield:
                 result["strc_dividend_pct"] = round(float(div_yield) * 100, 2)
 
-        market_cap = info.get("marketCap")
-        if market_cap:
-            result["strc_notional_m"] = round(market_cap / 1e6, 1)
+        # Compute notional from shares × price (marketCap is stale for preferred stocks in yfinance)
+        shares = info.get("sharesOutstanding") or info.get("impliedSharesOutstanding")
+        if shares and price:
+            result["strc_notional_m"] = round((float(shares) * float(price)) / 1e6, 1)
+        elif info.get("marketCap"):
+            result["strc_notional_m"] = round(info["marketCap"] / 1e6, 1)
 
         avg_vol = info.get("averageVolume")
         if avg_vol and price:
