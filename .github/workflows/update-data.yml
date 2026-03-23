@@ -2,10 +2,13 @@ name: Update Dashboard Data
 
 on:
   schedule:
+    # Daily at 06:00 UTC
     - cron: '0 6 * * *'
+    # Weekdays 3x daily
     - cron: '0 6 * * 1-5'
     - cron: '0 12 * * 1-5'
     - cron: '0 18 * * 1-5'
+    # Weekends once daily
     - cron: '0 6 * * 0,6'
   workflow_dispatch:
 
@@ -17,42 +20,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout repo
       - uses: actions/checkout@v4
 
+      # Python setup
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
+      # Install dependencies
       - name: Install dependencies
         run: |
           pip install yfinance playwright requests
           playwright install chromium --with-deps
 
-      # Step 1: Automated data
-      - name: Fetch automated data (data.json)
+      # Step 1: Fetch automated data (data.json)
+      - name: Fetch automated data
         run: python fetch_data.py
 
-      # Step 2: Manual + STRC (UPDATED)
-      - name: Scrape manual data sources (manual_data.json)
+      # Step 2: Scrape manual + STRC data
+      - name: Scrape manual data sources
         env:
           LUXOR_API_KEY: ${{ secrets.LUXOR_API_KEY }}
           LUXOR_SUBACCOUNT: ${{ secrets.LUXOR_SUBACCOUNT }}
         run: python scrape_manual.py
 
-      # OPTIONAL: Step 3 — separate notional script
-      # (only if you DON'T add it inside scrape_manual.py)
-      - name: Fetch STRC Notional
-        run: python fetch_notional.py
-        continue-on-error: true
-
-      # Commit
+      # Commit and push changes safely
       - name: Commit and push if data changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Use GITHUB_TOKEN to authenticate pushes
+          # Authenticate push using GITHUB_TOKEN
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
 
           git add data.json manual_data.json
