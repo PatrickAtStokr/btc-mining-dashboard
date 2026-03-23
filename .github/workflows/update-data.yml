@@ -1,30 +1,58 @@
-name: Fetch STRC Notional
+name: Update Dashboard Data
 
 on:
   schedule:
-    - cron: "*/15 * * * *"   # every 15 min
+    - cron: '0 6 * * *'
+    - cron: '0 6 * * 1-5'
+    - cron: '0 12 * * 1-5'
+    - cron: '0 18 * * 1-5'
+    - cron: '0 6 * * 0,6'
   workflow_dispatch:
 
 jobs:
-  fetch:
+  update-data:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          node-version: 20
+          python-version: '3.12'
 
-      - name: Run fetch script
-        run: node scripts/fetchNotional.js
-
-      - name: Commit changes
+      - name: Install dependencies
         run: |
-          git config --global user.name "bot"
-          git config --global user.email "bot@github.com"
-          git add data/
-          git commit -m "update notional" || echo "no changes"
-          git push
+          pip install yfinance playwright requests
+          playwright install chromium --with-deps
+
+      # Step 1: Automated data
+      - name: Fetch automated data (data.json)
+        run: python fetch_data.py
+
+      # Step 2: Manual + STRC (UPDATED)
+      - name: Scrape manual data sources (manual_data.json)
+        env:
+          LUXOR_API_KEY: ${{ secrets.LUXOR_API_KEY }}
+          LUXOR_SUBACCOUNT: ${{ secrets.LUXOR_SUBACCOUNT }}
+        run: python scrape_manual.py
+
+      # OPTIONAL: Step 3 — separate notional script
+      # (only if you DON'T add it inside scrape_manual.py)
+      - name: Fetch STRC Notional
+        run: python fetch_notional.py
+        continue-on-error: true
+
+      # Commit
+      - name: Commit and push if data changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json manual_data.json
+
+          if git diff --staged --quiet; then
+            echo "No data changes — skipping commit."
+          else
+            git commit -m "Auto-update dashboard data $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push
+          fi
