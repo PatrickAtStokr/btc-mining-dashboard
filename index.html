@@ -463,7 +463,10 @@ let NETWORK_HISTORY = [];
 let DATA = [];
 // ===== SIGNAL (loaded from manual_data.json) =====
 let SIGNAL = '';
-
+// new global variable for Daily Research Signal
+let DAILY_SIGNAL = '';  
+    
+    
 // ===== GLOBALS =====
 let filteredData = [...DATA];
 let filteredBtc = [];
@@ -1035,6 +1038,7 @@ function renderAll() {
     renderSignal();
     renderCharts();
     renderTable();
+    renderDailySignal();
 }
 
 // ===== INIT =====
@@ -1049,6 +1053,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (d.btc_history) BTC_HISTORY = d.btc_history;
             if (d.network_history) NETWORK_HISTORY = d.network_history;
             if (d.hashprice_history) autoHashprice = d.hashprice_history;
+            if (m.daily_signal) DAILY_SIGNAL = m.daily_signal;
             if (d.updated) {
                 const ts = new Date(d.updated);
                 document.getElementById('lastUpdated').textContent =
