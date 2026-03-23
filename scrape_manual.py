@@ -312,52 +312,64 @@ def fetch_luxor():
     return result
 
 
-# ── STRC / Strategy Preferred Stock (yfinance) ───────────────────────────────
+# ── STRC / Strategy Preferred Stock ──────────────────────────────────────────
 
 def fetch_strc():
-    """Fetch STRC stock data from Yahoo Finance via yfinance."""
-    print("  Fetching STRC (Nasdaq) via yfinance...")
-    try:
-        import yfinance as yf
-    except ImportError:
-        print("  ✗ yfinance not installed.")
-        return {}
+    """
+    Fetch STRC data from Strategy's own public API.
+    Primary: https://api.strategy.com/btc/getPreferreds (no auth required)
+    Fallback: yfinance for price if the API is unavailable.
+    """
+    print("  Fetching STRC from api.strategy.com...")
 
     result = {}
+
+    # ── Primary: Strategy public API ─────────────────────────────────────────
     try:
+        req = urllib.request.Request(
+            "https://api.strategy.com/btc/getPreferreds",
+            headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=30, context=SSL_CTX) as resp:
+            data = json.loads(resp.read().decode())
+
+        # Find the STRC entry in the list
+        strc = next((x for x in data if x.get("company") == "STRC"), None)
+        if strc:
+            if strc.get("price"):
+                result["strc_price"] = round(float(strc["price"]), 2)
+            if strc.get("currentDividend"):
+                result["strc_dividend_pct"] = round(float(strc["currentDividend"]), 2)
+            if strc.get("btcRating"):
+                result["strc_btc_rating"] = round(float(strc["btcRating"]), 1)
+            if strc.get("averageVolume"):
+                # averageVolume appears to be in $M already
+                result["strc_vol_30d_m"] = round(float(strc["averageVolume"]), 1)
+            print(f"  ✓ STRC (Strategy API): {len(result)} fields")
+            for k, v in result.items():
+                print(f"    {k}: {v}")
+            return result
+        else:
+            print("  ✗ STRC not found in Strategy API response")
+
+    except Exception as e:
+        print(f"  [STRC] Strategy API failed ({e}), falling back to yfinance...")
+
+    # ── Fallback: yfinance ────────────────────────────────────────────────────
+    try:
+        import yfinance as yf
         ticker = yf.Ticker("STRC")
         info   = ticker.info
-
-        price = info.get("currentPrice") or info.get("regularMarketPrice") or info.get("previousClose")
+        price  = info.get("currentPrice") or info.get("regularMarketPrice") or info.get("previousClose")
         if price:
             result["strc_price"] = round(float(price), 2)
-
         div_rate = info.get("dividendRate")
         if div_rate:
             result["strc_dividend_pct"] = round(float(div_rate), 2)
-        else:
-            div_yield = info.get("dividendYield")
-            if div_yield:
-                result["strc_dividend_pct"] = round(float(div_yield) * 100, 2)
-
-        # Notional = aggregate liquidation preference = shares × $100 par value
-        # (STRC is a preferred stock; par/liquidation value is $100/share regardless of market price)
-        shares = info.get("sharesOutstanding") or info.get("impliedSharesOutstanding")
-        if shares:
-            result["strc_notional_m"] = round((float(shares) * 100) / 1e6, 1)
-        elif info.get("marketCap") and price:
-            # Fallback: back-calculate shares from marketCap, then apply $100 par
-            implied_shares = info["marketCap"] / float(price)
-            result["strc_notional_m"] = round((implied_shares * 100) / 1e6, 1)
-
         avg_vol = info.get("averageVolume")
         if avg_vol and price:
             result["strc_vol_30d_m"] = round((avg_vol * float(price)) / 1e6, 1)
-
-        for k, v in result.items():
-            print(f"    {k}: {v}")
-        print(f"  ✓ STRC: {len(result)} fields")
-
+        print(f"  ✓ STRC (yfinance fallback): {len(result)} fields")
     except Exception as e:
         print(f"  ✗ STRC error: {e}")
 
