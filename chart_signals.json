@@ -1,0 +1,17 @@
+{
+  "signal_points": [
+    "Chart signals will auto-populate once the GitHub Actions workflow runs for the first time.",
+    "Add your ANTHROPIC_API_KEY to repo secrets to enable AI-generated signals.",
+    "You can trigger the workflow manually from the Actions tab at any time."
+  ],
+  "signals": {
+    "btc_price": "Signal will auto-generate — add ANTHROPIC_API_KEY to GitHub secrets and run the update-signals workflow.",
+    "hashprice": "Signal will auto-generate — add ANTHROPIC_API_KEY to GitHub secrets and run the update-signals workflow.",
+    "difficulty": "Signal will auto-generate — add ANTHROPIC_API_KEY to GitHub secrets and run the update-signals workflow.",
+    "bmn_revenue": "Signal will auto-generate — add ANTHROPIC_API_KEY to GitHub secrets and run the update-signals workflow.",
+    "strc": "Signal will auto-generate — add ANTHROPIC_API_KEY to GitHub secrets and run the update-signals workflow.",
+    "bmn_hashrate": "Signal will auto-generate — add ANTHROPIC_API_KEY to GitHub secrets and run the update-signals workflow."
+  },
+  "generated": "2026-03-24T00:00:00+00:00",
+  "data_snapshot": null
+}
