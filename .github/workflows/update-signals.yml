@@ -1,0 +1,42 @@
+# .github/workflows/update-signals.yml
+# Generates per-chart AI signals every 2 days using the Google Gemini API (free tier).
+# Also supports manual triggering from the Actions tab.
+#
+# Required secret: GEMINI_API_KEY (Settings → Secrets → Actions)
+# Get a free key at: https://aistudio.google.com/app/apikey
+
+name: Update Chart Signals
+
+on:
+  schedule:
+    # Every 2 days at 07:00 UTC (runs after the daily data update at 06:00)
+    - cron: '0 7 */2 * *'
+  workflow_dispatch:  # Manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  generate-signals:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Generate chart signals
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python generate_chart_signals.py
+
+      - name: Commit & push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add chart_signals.json
+          git diff --cached --quiet || git commit -m "Update chart signals $(date -u +%Y-%m-%d)"
+          git push
