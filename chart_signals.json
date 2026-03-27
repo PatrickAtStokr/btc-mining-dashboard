@@ -1,17 +1,29 @@
 {
   "signal_points": [
-    "Chart signals will auto-populate once the GitHub Actions workflow runs for the first time.",
-    "Add your ANTHROPIC_API_KEY to repo secrets to enable AI-generated signals.",
-    "You can trigger the workflow manually from the Actions tab at any time."
+    "Hashprice at $32.2/PH/day suggests current profitability for efficient miners.",
+    "BMN fleet hashrate of 27.8 EH/s is driving significant on-chain rewards.",
+    "STRC trading at par with a 4.9x BTC rating indicates strong investor confidence."
   ],
   "signals": {
-    "btc_price": "Signal will auto-generate — add ANTHROPIC_API_KEY to GitHub secrets and run the update-signals workflow.",
-    "hashprice": "Signal will auto-generate — add ANTHROPIC_API_KEY to GitHub secrets and run the update-signals workflow.",
-    "difficulty": "Signal will auto-generate — add ANTHROPIC_API_KEY to GitHub secrets and run the update-signals workflow.",
-    "bmn_revenue": "Signal will auto-generate — add ANTHROPIC_API_KEY to GitHub secrets and run the update-signals workflow.",
-    "strc": "Signal will auto-generate — add ANTHROPIC_API_KEY to GitHub secrets and run the update-signals workflow.",
-    "bmn_hashrate": "Signal will auto-generate — add ANTHROPIC_API_KEY to GitHub secrets and run the update-signals workflow."
+    "btc_price": "BTC at $66.5k after a 7d drop of -5.4% presents a challenging revenue environment.",
+    "hashprice": "Hashprice stability at $32.2/PH/day supports consistent daily miner earnings.",
+    "difficulty": "Flat difficulty at 145.04T shows stable network competition for miners.",
+    "bmn_revenue": "BMN daily revenue of \u20bf8.036 reflects solid network participation.",
+    "strc": "STRC at $99.97 par with a 4.9x BTC rating shows STOKR's strong market position.",
+    "bmn_hashrate": "BMN's 27.8 EH/s active hashrate demonstrates robust operational capacity."
   },
-  "generated": "2026-03-24T00:00:00+00:00",
-  "data_snapshot": null
+  "generated": "2026-03-27T12:33:42.369934+00:00",
+  "data_snapshot": {
+    "btc": {
+      "price": 66531.23,
+      "high_7d": 71682.99,
+      "low_7d": 66462.11,
+      "change_7d_pct": -5.38
+    },
+    "network": {
+      "hashrate_eh": null,
+      "difficulty_t": 145.04,
+      "prev_difficulty_t": 145.04
+    }
+  }
 }
