@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STOKR Mining Intelligence</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --stokr-black: #0A0A0A;
+            --stokr-white: #FFFFFF;
+            --venture-green: #86FA59;
+            --venture-teal: #74FDE2;
+            --future-blue: #0050CA;
+            --flame-red: #EE220D;
+            --body-grey: #333333;
+            --off-white: #F2F2F2;
+            --supporting-grey: #888888;
+            --light-grey: #CCCCCC;
+            --card-bg: #141414;
+            --card-border: #2a2a2a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Open Sans', Arial, sans-serif;
+            background: var(--stokr-black);
+            color: var(--off-white);
+            min-height: 100vh;
+        }
+
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--card-border);
+        }
+
+        .header-left h1 {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--stokr-white);
+            letter-spacing: 0.5px;
+        }
+
+        .header-left h1 span {
+            background: linear-gradient(90deg, var(--venture-green), var(--venture-teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-left .subtitle {
+            font-size: 13px;
+            font-weight: 300;
+            color: var(--supporting-grey);
+            margin-top: 4px;
+        }
+
+        .last-updated {
+            font-size: 12px;
+            font-weight: 300;
+            color: var(--supporting-grey);
+        }
+
+        /* KPI Cards */
+        .kpi-hero-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .kpi-secondary-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: border-color 0.2s;
+        }
+
+        .kpi-card.hero {
+            padding: 24px;
+        }
+
+        .kpi-card.secondary {
+            padding: 14px 16px;
+        }
+
+        .kpi-card:hover {
+            border-color: var(--venture-green);
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--supporting-grey);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--venture-green);
+            line-height: 1.1;
+        }
+
+        .kpi-card.hero .kpi-value {
+            font-size: 28px;
+        }
+
+        .kpi-card.secondary .kpi-value {
+            font-size: 20px;
+        }
+
+        .kpi-card.secondary .kpi-label {
+            font-size: 10px;
+            margin-bottom: 6px;
+        }
+
+        .kpi-value.white {
+            color: var(--stokr-white);
+        }
+
+        .kpi-change {
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        .kpi-card.secondary .kpi-change {
+            font-size: 11px;
+        }
+
+        .kpi-change.positive { color: var(--venture-green); }
+        .kpi-change.negative { color: var(--flame-red); }
+        .kpi-change.neutral { color: var(--supporting-grey); }
+
+        .kpi-sub {
+            font-size: 11px;
+            font-weight: 300;
+            color: var(--supporting-grey);
+            margin-top: 4px;
+        }
+
+        .kpi-card.secondary .kpi-sub {
+            font-size: 10px;
+        }
+
+        /* Chart sections */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .chart-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--stokr-white);
+            margin-bottom: 16px;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 260px;
+        }
+
+        /* Data table */
+        .table-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+            margin-bottom: 24px;
+        }
+
+        .table-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--stokr-white);
+            margin-bottom: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead th {
+            text-align: left;
+            font-weight: 600;
+            color: var(--supporting-grey);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--card-border);
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        thead th:hover {
+            color: var(--venture-green);
+        }
+
+        thead th .sort-arrow {
+            margin-left: 4px;
+            opacity: 0.4;
+        }
+
+        thead th .sort-arrow.active {
+            opacity: 1;
+            color: var(--venture-green);
+        }
+
+        tbody td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #1a1a1a;
+            font-weight: 400;
+            color: var(--off-white);
+            white-space: nowrap;
+        }
+
+        tbody tr:hover {
+            background: #1a1a1a;
+        }
+
+        td.number {
+            font-variant-numeric: tabular-nums;
+            text-align: right;
+        }
+
+        td.positive { color: var(--venture-green); }
+        td.negative { color: var(--flame-red); }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 16px 0;
+            font-size: 11px;
+            font-weight: 300;
+            color: var(--supporting-grey);
+            border-top: 1px solid var(--card-border);
+        }
+
+        footer span {
+            color: var(--venture-green);
+        }
+
+        /* Signal banner */
+        .signal-banner {
+            background: linear-gradient(90deg, rgba(134,250,89,0.08), rgba(116,253,226,0.08));
+            border: 1px solid rgba(134,250,89,0.2);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+
+        .signal-banner .signal-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--venture-green);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+        }
+
+        .signal-banner .signal-text {
+            font-size: 14px;
+            font-weight: 400;
+            color: var(--off-white);
+            line-height: 1.5;
+        }
+
+        /* Per-chart signal */
+        .chart-signal {
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--supporting-grey);
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255,255,255,0.04);
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        .chart-signal .signal-icon {
+            color: var(--venture-green);
+            font-style: normal;
+            margin-right: 4px;
+        }
+
+        /* Signal banner bullet list */
+        .signal-banner .signal-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .signal-banner .signal-list li {
+            font-size: 14px;
+            font-weight: 400;
+            color: var(--off-white);
+            line-height: 1.5;
+            padding: 4px 0;
+        }
+
+        .signal-banner .signal-list li::before {
+            content: '›';
+            color: var(--venture-green);
+            font-weight: 700;
+            margin-right: 8px;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .charts-row { grid-template-columns: 1fr; }
+            .kpi-hero-row { grid-template-columns: repeat(2, 1fr); }
+            .kpi-secondary-row { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 600px) {
+            .kpi-hero-row { grid-template-columns: 1fr; }
+            .kpi-secondary-row { grid-template-columns: 1fr; }
+            .dashboard { padding: 12px; }
+            header { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        /* Full-width BTC card */
+        .full-width-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .full-width-card:hover {
+            border-color: var(--venture-green);
+        }
+
+        .btc-chart-container {
+            height: 320px;
+        }
+
+        .chart-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .chart-controls .date-range-selector select {
+            background: var(--card-bg);
+            color: var(--off-white);
+            border: 1px solid var(--card-border);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-family: 'Open Sans', Arial, sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .chart-controls .date-range-selector select:focus {
+            outline: none;
+            border-color: var(--venture-green);
+        }
+
+        /* No-data state */
+        .no-trend {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--supporting-grey);
+            font-size: 13px;
+            font-weight: 300;
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <header>
+        <div class="header-left">
+            <h1>STOKR <span>Mining Intelligence</span></h1>
+            <div class="subtitle">Daily Bitcoin Mining & BMN Performance Dashboard</div>
+        </div>
+    </header>
+
+    <!-- KPI Cards — Hero Row -->
+    <div class="kpi-hero-row" id="kpiHeroRow">
+        <!-- Filled by JS: BTC Price, Hashprice, Mined per BMN2 Token, STRC Price -->
+    </div>
+    <!-- KPI Cards — Secondary Row -->
+    <div class="kpi-secondary-row" id="kpiSecondaryRow">
+        <!-- Filled by JS: remaining 5 KPIs -->
+    </div>
+
+    <!-- Signal Banner -->
+    <div class="signal-banner" id="signalBanner" style="display:none;">
+        <div class="signal-label">STOKR Signal</div>
+        <ul class="signal-list" id="signalList"></ul>
+    </div>
+
+    <!-- BTC Price — full width with controls below -->
+    <div class="chart-card full-width-card">
+        <div class="chart-title">BTC Price (USD)</div>
+        <div class="chart-container btc-chart-container"><canvas id="chartBtcPrice"></canvas><div class="no-trend" id="noTrendBtc" style="display:none;">Trend available after 2+ days of data</div></div>
+        <div class="chart-controls">
+            <div class="last-updated" id="lastUpdated"></div>
+            <div class="date-range-selector">
+                <select id="dateRange" onchange="applyFilters()">
+                    <option value="7">7D</option>
+                    <option value="30" selected>30D</option>
+                    <option value="90">90D</option>
+                    <option value="365">1Y</option>
+                    <option value="1460">4Y</option>
+                    <option value="all">ALL</option>
+                </select>
+            </div>
+        </div>
+        <div class="chart-signal" id="signalBtc" style="display:none;"></div>
+    </div>
+
+    <!-- Charts Row 1: Hashprice + Network Difficulty (both data-rich) -->
+    <div class="charts-row">
+        <div class="chart-card">
+            <div class="chart-title">Hashprice (USD/PH/day)</div>
+            <div class="chart-container"><canvas id="chartHashprice"></canvas><div class="no-trend" id="noTrendHp" style="display:none;">Trend available after 2+ days of data</div></div>
+            <div style="font-size:11px;color:#6b7280;margin-top:6px;text-align:right;">Derived from block subsidy only · excludes tx fees · ~3–5% below Luxor actual</div>
+            <div class="chart-signal" id="signalHashprice" style="display:none;"></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">Network Difficulty (T) & Global Hashrate (EH/s)</div>
+            <div class="chart-container"><canvas id="chartDifficulty"></canvas><div class="no-trend" id="noTrendDiff" style="display:none;">Trend available after 2+ days of data</div></div>
+            <div class="chart-signal" id="signalDifficulty" style="display:none;"></div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2: BMN Revenue + STRC (pending Luxor/Exacore data) -->
+    <div class="charts-row">
+        <div class="chart-card">
+            <div class="chart-title">BMN Daily Revenue (BTC)</div>
+            <div class="chart-container"><canvas id="chartBmnRevenue"></canvas><div class="no-trend" id="noTrendRev" style="display:none;">Trend available after 2+ days of data</div></div>
+            <div class="chart-signal" id="signalBmnRevenue" style="display:none;"></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">STRC Price vs Par ($100) & BTC Rating</div>
+            <div class="chart-container"><canvas id="chartStrc"></canvas><div class="no-trend" id="noTrendStrc" style="display:none;">Trend available after 2+ days of data</div></div>
+            <div class="chart-signal" id="signalStrc" style="display:none;"></div>
+        </div>
+    </div>
+
+    <!-- Charts Row 3: BMN Hashrate (pending Luxor/Exacore data) -->
+    <div class="charts-row">
+        <div class="chart-card">
+            <div class="chart-title">BMN Hashrate (EH/s) & Active Miners</div>
+            <div class="chart-container"><canvas id="chartBmnHashrate"></canvas><div class="no-trend" id="noTrendHash" style="display:none;">Trend available after 2+ days of data</div></div>
+            <div class="chart-signal" id="signalBmnHashrate" style="display:none;"></div>
+        </div>
+    </div>
+
+    <!-- Historical Data Table -->
+    <div class="table-card">
+        <div class="table-title">Historical Data</div>
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">Date <span class="sort-arrow" id="sort0">▼</span></th>
+                    <th onclick="sortTable(1)">BTC <span class="sort-arrow" id="sort1">▼</span></th>
+                    <th onclick="sortTable(2)">Hashprice <span class="sort-arrow" id="sort2">▼</span></th>
+                    <th onclick="sortTable(3)">Difficulty <span class="sort-arrow" id="sort3">▼</span></th>
+                    <th onclick="sortTable(4)">BMN Rev <span class="sort-arrow" id="sort4">▼</span></th>
+                    <th onclick="sortTable(5)">BMN HR 24h <span class="sort-arrow" id="sort5">▼</span></th>
+                    <th onclick="sortTable(6)">Miners <span class="sort-arrow" id="sort6">▼</span></th>
+                    <th onclick="sortTable(7)">Uptime <span class="sort-arrow" id="sort7">▼</span></th>
+                    <th onclick="sortTable(8)">STRC <span class="sort-arrow" id="sort8">▼</span></th>
+                    <th onclick="sortTable(9)">BTC Rating <span class="sort-arrow" id="sort9">▼</span></th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+    <footer>
+        STOKR Mining Intelligence &mdash; Powered by <span>Cowork</span> &mdash; Data refreshed daily
+    </footer>
+</div>
+
+<script>
+// ===== BTC PRICE HISTORY (loaded from data.json) =====
+let BTC_HISTORY = [];
+
+// ===== HASHPRICE HISTORY (loaded from manual_data.json) =====
+let HASHPRICE_HISTORY = [];
+// ===== NETWORK HISTORY (loaded from data.json) =====
+let NETWORK_HISTORY = [];
+
+// ===== DAILY BRIEFING DATA (loaded from manual_data.json) =====
+let DATA = [];
+// ===== SIGNAL (loaded from manual_data.json) =====
+let SIGNAL = '';
+// ===== SIGNAL POINTS (loaded from manual_data.json — array of 2-3 strings) =====
+let SIGNAL_POINTS = [];
+// ===== CHART SIGNALS (loaded from chart_signals.json — generated by GitHub Actions) =====
+let CHART_SIGNALS = {};
+
+// ===== GLOBALS =====
+let filteredData = [...DATA];
+let filteredBtc = [];
+let filteredHp = [...HASHPRICE_HISTORY];
+let filteredNet = [];
+let charts = {};
+let currentSort = { col: 0, asc: false };
+
+// ===== HELPERS =====
+function fmt(n, decimals = 0) {
+    if (n == null) return '—';
+    return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+function fmtCurrency(n, decimals = 0) {
+    if (n == null) return '—';
+    return '$' + fmt(n, decimals);
+}
+function pctChange(current, previous) {
+    if (!previous || previous === 0) return null;
+    return ((current - previous) / previous) * 100;
+}
+function changeClass(val) {
+    if (val == null) return 'neutral';
+    return val > 0 ? 'positive' : val < 0 ? 'negative' : 'neutral';
+}
+function changeText(val, suffix = '') {
+    if (val == null) return '';
+    const sign = val > 0 ? '+' : '';
+    return sign + val.toFixed(2) + '%' + suffix;
+}
+function shortDate(d) {
+    const parts = d.split('-');
+    return parts[1] + '/' + parts[2];
+}
+function shortDateYear(d) {
+    const parts = d.split('-');
+    return parts[1] + '/' + parts[0].slice(2);
+}
+// Thin a dataset to ~maxPoints by taking every Nth entry (keeps first + last)
+function thinData(arr, maxPoints) {
+    if (arr.length <= maxPoints) return arr;
+    const step = Math.ceil(arr.length / maxPoints);
+    const result = [];
+    for (let i = 0; i < arr.length; i += step) {
+        result.push(arr[i]);
+    }
+    // Always include the last data point
+    if (result[result.length - 1] !== arr[arr.length - 1]) {
+        result.push(arr[arr.length - 1]);
+    }
+    return result;
+}
+
+// ===== FILTERS =====
+function applyFilters() {
+    const range = document.getElementById('dateRange').value;
+    if (range === 'all') {
+        filteredData = [...DATA];
+        filteredBtc = [...BTC_HISTORY];
+        filteredHp = [...HASHPRICE_HISTORY];
+        filteredNet = [...NETWORK_HISTORY];
+    } else {
+        const days = parseInt(range);
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - days);
+        filteredData = DATA.filter(d => new Date(d.date) >= cutoff);
+        filteredBtc = BTC_HISTORY.filter(d => new Date(d.date) >= cutoff);
+        filteredHp = HASHPRICE_HISTORY.filter(d => new Date(d.date) >= cutoff);
+        filteredNet = NETWORK_HISTORY.filter(d => new Date(d.date) >= cutoff);
+    }
+    if (filteredData.length === 0) filteredData = [...DATA];
+    if (filteredBtc.length === 0) filteredBtc = [...BTC_HISTORY];
+    if (filteredHp.length === 0) filteredHp = [...HASHPRICE_HISTORY];
+    if (filteredNet.length === 0) filteredNet = [...NETWORK_HISTORY];
+    renderAll();
+}
+
+// ===== RENDER KPIs =====
+function renderKPIs() {
+    const latest = filteredData[filteredData.length - 1];
+    const prev = filteredData.length > 1 ? filteredData[filteredData.length - 2] : null;
+
+    // Range stats from BTC history
+    const btcPrices = filteredBtc.map(d => d.btc_price);
+    const btcHigh = Math.max(...btcPrices);
+    const btcLow = Math.min(...btcPrices);
+    const btcRangeChange = filteredBtc.length > 1 ? pctChange(filteredBtc[filteredBtc.length-1].btc_price, filteredBtc[0].btc_price) : null;
+    const rangeLabelMap = {'7':'7D','30':'30D','90':'90D','365':'1Y','1460':'4Y','all':'All'};
+    const rangeLabel = rangeLabelMap[document.getElementById('dateRange').value] || '30D';
+
+    const kpis = [
+        {
+            label: 'BTC Price',
+            value: fmtCurrency(latest.btc_price),
+            valueClass: 'white',
+            change: btcRangeChange,
+            sub: rangeLabel + ': ' + fmtCurrency(btcLow) + ' – ' + fmtCurrency(btcHigh)
+        },
+        {
+            label: 'Hashprice',
+            value: fmtCurrency(latest.hashprice_usd, 2),
+            valueClass: '',
+            change: prev ? pctChange(latest.hashprice_usd, prev.hashprice_usd) : null,
+            sub: latest.hashprice_btc + ' BTC/PH/day'
+        },
+        {
+            label: 'BMN Revenue 24h',
+            value: '₿' + fmt(latest.bmn_revenue_btc, 3),
+            valueClass: '',
+            change: prev ? pctChange(latest.bmn_revenue_btc, prev.bmn_revenue_btc) : null,
+            sub: fmtCurrency(latest.bmn_revenue_btc * latest.btc_price, 0)
+        },
+        {
+            label: 'BMN Active Miners',
+            value: fmt(latest.bmn_active_miners),
+            valueClass: 'white',
+            change: prev ? pctChange(latest.bmn_active_miners, prev.bmn_active_miners) : null,
+            sub: 'Uptime ' + latest.bmn_uptime_pct + '%'
+        },
+        {
+            label: 'Mined per BMN2 Token',
+            value: '₿' + fmt(latest.bmn_mined_per_token_btc, 8),
+            valueClass: '',
+            change: prev ? pctChange(latest.bmn_mined_per_token_btc, prev.bmn_mined_per_token_btc) : null,
+            sub: fmtCurrency(latest.bmn_mined_per_token_btc * latest.btc_price, 2)
+        },
+        {
+            label: 'BMN2 Value',
+            value: latest.bmn_value_per_token_usd ? fmtCurrency(latest.bmn_value_per_token_usd, 0) : '—',
+            valueClass: '',
+            change: prev?.bmn_value_per_token_usd ? pctChange(latest.bmn_value_per_token_usd, prev.bmn_value_per_token_usd) : null,
+            sub: latest.bmn_days_remaining ? 'Day ' + latest.bmn_term_day + ' of 1460 · ' + latest.bmn_days_remaining + 'd remaining' : 'Mined + forward mining value'
+        },
+        {
+            label: 'STRC Price',
+            value: fmtCurrency(latest.strc_price, 2),
+            valueClass: latest.strc_price >= 100 ? '' : 'white',
+            change: prev ? pctChange(latest.strc_price, prev.strc_price) : null,
+            sub: 'Div ' + latest.strc_dividend_pct + '% · Rating ' + latest.strc_btc_rating + 'x'
+        },
+        {
+            label: 'Difficulty',
+            value: fmt(latest.difficulty, 2) + 'T',
+            valueClass: 'white',
+            change: prev ? pctChange(latest.difficulty, prev.difficulty) : null,
+            sub: 'Network ' + fmt(latest.network_hashrate_eh) + ' EH/s'
+        },
+        {
+            label: 'STRC Notional',
+            value: fmtCurrency(latest.strc_notional_m, 1) + 'M',
+            valueClass: 'white',
+            change: prev ? pctChange(latest.strc_notional_m, prev.strc_notional_m) : null,
+            sub: 'Vol 30D ' + fmtCurrency(latest.strc_vol_30d_m, 1) + 'M'
+        }
+    ];
+
+    // Hero KPIs: BTC Price (0), Hashprice (1), Mined per BMN2 Token (4), STRC Price (6)
+    const heroIndices = [0, 1, 4, 6];
+    const heroKpis = heroIndices.map(i => kpis[i]);
+    const secondaryKpis = kpis.filter((_, i) => !heroIndices.includes(i));
+
+    function renderKpiCard(k, tier) {
+        return `<div class="kpi-card ${tier}">
+            <div class="kpi-label">${k.label}</div>
+            <div class="kpi-value ${k.valueClass}">${k.value}</div>
+            ${k.change != null ? `<div class="kpi-change ${changeClass(k.change)}">${changeText(k.change)}</div>` : ''}
+            ${k.sub ? `<div class="kpi-sub">${k.sub}</div>` : ''}
+        </div>`;
+    }
+
+    document.getElementById('kpiHeroRow').innerHTML = heroKpis.map(k => renderKpiCard(k, 'hero')).join('');
+    document.getElementById('kpiSecondaryRow').innerHTML = secondaryKpis.map(k => renderKpiCard(k, 'secondary')).join('');
+}
+
+// ===== RENDER SIGNAL =====
+function renderSignal() {
+    const banner = document.getElementById('signalBanner');
+    const list = document.getElementById('signalList');
+    // Prefer SIGNAL_POINTS array; fall back to single SIGNAL string split by newline
+    let points = SIGNAL_POINTS.length ? SIGNAL_POINTS : (SIGNAL ? SIGNAL.split('\n').filter(s => s.trim()) : []);
+    if (points.length) {
+        list.innerHTML = points.map(p => `<li>${p}</li>`).join('');
+        banner.style.display = 'block';
+    } else {
+        banner.style.display = 'none';
+    }
+}
+
+// ===== RENDER CHART SIGNALS =====
+function renderChartSignals() {
+    const mapping = {
+        btc_price: 'signalBtc',
+        hashprice: 'signalHashprice',
+        difficulty: 'signalDifficulty',
+        bmn_revenue: 'signalBmnRevenue',
+        strc: 'signalStrc',
+        bmn_hashrate: 'signalBmnHashrate'
+    };
+    Object.entries(mapping).forEach(([key, elId]) => {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        const text = CHART_SIGNALS[key];
+        if (text && text.trim()) {
+            el.innerHTML = '<span class="signal-icon">›</span> ' + text;
+            el.style.display = 'block';
+        } else {
+            el.style.display = 'none';
+        }
+    });
+}
+
+// ===== CROSSHAIR PLUGIN =====
+const crosshairPlugin = {
+    id: 'crosshair',
+    afterDraw(chart) {
+        if (chart.tooltip?._active?.length) {
+            const x = chart.tooltip._active[0].element.x;
+            const yAxis = chart.scales.y;
+            const ctx = chart.ctx;
+            ctx.save();
+            ctx.beginPath();
+            ctx.setLineDash([4, 4]);
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+            ctx.moveTo(x, yAxis.top);
+            ctx.lineTo(x, yAxis.bottom);
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+};
+Chart.register(crosshairPlugin);
+
+// ===== CHART DEFAULTS =====
+const chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+        mode: 'index',
+        intersect: false
+    },
+    plugins: {
+        legend: { display: false },
+        tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: '#1a1a1a',
+            titleColor: '#F2F2F2',
+            bodyColor: '#F2F2F2',
+            borderColor: '#2a2a2a',
+            borderWidth: 1,
+            padding: 10,
+            titleFont: { family: 'Open Sans', weight: '600' },
+            bodyFont: { family: 'Open Sans' },
+            cornerRadius: 8
+        }
+    },
+    scales: {
+        x: {
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            ticks: { color: '#888888', font: { family: 'Open Sans', size: 11 } }
+        },
+        y: {
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            ticks: { color: '#888888', font: { family: 'Open Sans', size: 11 } }
+        }
+    }
+};
+
+function makeGradient(ctx, color1, color2) {
+    const gradient = ctx.createLinearGradient(0, 0, 0, 260);
+    gradient.addColorStop(0, color1);
+    gradient.addColorStop(1, color2);
+    return gradient;
+}
+
+// ===== RENDER CHARTS =====
+function renderCharts() {
+    const labels = filteredData.map(d => shortDate(d.date));
+    const singleDay = filteredData.length < 2;
+
+    // Destroy existing
+    Object.values(charts).forEach(c => c.destroy());
+    charts = {};
+
+    // Show/hide no-trend messages — each chart uses its own data source flag
+    const singleBtc = filteredBtc.length < 2;
+    const singleHp  = filteredHp.length < 2;
+
+    // Mining data charts (Rev, Strc, Hash, Diff) depend on filteredData
+    ['Rev','Strc','Hash','Diff'].forEach(id => {
+        const el = document.getElementById('noTrend' + id);
+        const canvas = el?.previousElementSibling;
+        if (singleDay) {
+            if (el) el.style.display = 'flex';
+            if (canvas) canvas.style.display = 'none';
+        } else {
+            if (el) el.style.display = 'none';
+            if (canvas) canvas.style.display = 'block';
+        }
+    });
+
+    // Hashprice has its own 5Y dataset — independent of singleDay
+    const elHpNoTrend = document.getElementById('noTrendHp');
+    const canvasHpEl  = document.getElementById('chartHashprice');
+    if (singleHp) {
+        if (elHpNoTrend) elHpNoTrend.style.display = 'flex';
+        if (canvasHpEl)  canvasHpEl.style.display  = 'none';
+    } else {
+        if (elHpNoTrend) elHpNoTrend.style.display = 'none';
+        if (canvasHpEl)  canvasHpEl.style.display  = 'block';
+    }
+    // BTC chart has its own data source
+    const elBtcNo = document.getElementById('noTrendBtc');
+    const canvasBtc = elBtcNo?.previousElementSibling;
+    if (singleBtc) {
+        if (elBtcNo) elBtcNo.style.display = 'flex';
+        if (canvasBtc) canvasBtc.style.display = 'none';
+    } else {
+        if (elBtcNo) elBtcNo.style.display = 'none';
+        if (canvasBtc) canvasBtc.style.display = 'block';
+    }
+
+    // BTC Price (uses BTC_HISTORY — full history from CoinGecko)
+    if (!singleBtc) {
+        // Thin to max 300 points for performance
+        const btcThinned = thinData(filteredBtc, 300);
+        const longRange = filteredBtc.length > 180;
+        const btcLabels = btcThinned.map(d => longRange ? shortDateYear(d.date) : shortDate(d.date));
+        const ctxBtc = document.getElementById('chartBtcPrice').getContext('2d');
+        charts.btc = new Chart(ctxBtc, {
+            type: 'line',
+            data: {
+                labels: btcLabels,
+                datasets: [{
+                    data: btcThinned.map(d => d.btc_price),
+                    borderColor: '#F7931A',
+                    backgroundColor: makeGradient(ctxBtc, 'rgba(247,147,26,0.2)', 'rgba(247,147,26,0)'),
+                    borderWidth: longRange ? 1.5 : 2,
+                    fill: true, tension: 0.3,
+                    pointRadius: longRange ? 0 : 3,
+                    pointHitRadius: 8,
+                    pointBackgroundColor: '#F7931A', pointBorderColor: '#0A0A0A', pointBorderWidth: 2
+                }]
+            },
+            options: {
+                ...chartDefaults,
+                scales: {
+                    ...chartDefaults.scales,
+                    x: {
+                        ...chartDefaults.scales.x,
+                        ticks: {
+                            ...chartDefaults.scales.x.ticks,
+                            maxTicksLimit: longRange ? 12 : undefined,
+                            maxRotation: 0
+                        }
+                    },
+                    y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => '$' + v.toLocaleString() } }
+                }
+            }
+        });
+    }
+
+    // Hashprice (uses HASHPRICE_HISTORY — 5Y daily data)
+    const hpThinned = thinData(filteredHp, 300);
+    const hpLongRange = filteredHp.length > 180;
+    const ctxHp = document.getElementById('chartHashprice').getContext('2d');
+    if (!singleHp) charts.hp = new Chart(ctxHp, {
+        type: 'line',
+        data: {
+            labels: hpThinned.map(d => hpLongRange ? shortDateYear(d.date) : shortDate(d.date)),
+            datasets: [{
+                data: hpThinned.map(d => d.hashprice_usd),
+                borderColor: '#86FA59',
+                backgroundColor: makeGradient(ctxHp, 'rgba(134,250,89,0.15)', 'rgba(134,250,89,0)'),
+                borderWidth: 2, fill: true, tension: 0.3, pointRadius: 3,
+                pointBackgroundColor: '#86FA59', pointBorderColor: '#0A0A0A', pointBorderWidth: 2
+            }]
+        },
+        options: {
+            ...chartDefaults,
+            scales: {
+                ...chartDefaults.scales,
+                x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: hpLongRange ? 12 : undefined, maxRotation: 0 } },
+                y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => '$' + v.toFixed(2) } }
+            }
+        }
+    });
+
+    // BMN Revenue (only render when we have 2+ days of briefing data)
+    if (!singleDay) {
+    const ctxRev = document.getElementById('chartBmnRevenue').getContext('2d');
+    charts.rev = new Chart(ctxRev, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                data: filteredData.map(d => d.bmn_revenue_btc),
+                backgroundColor: 'rgba(134,250,89,0.6)',
+                borderColor: '#86FA59',
+                borderWidth: 1, borderRadius: 4
+            }]
+        },
+        options: {
+            ...chartDefaults,
+            scales: {
+                ...chartDefaults.scales,
+                y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => '₿' + v.toFixed(1) } }
+            }
+        }
+    });
+    } // end if !singleDay (BMN Revenue)
+
+    // STRC Price + BTC Rating (dual axis)
+    if (!singleDay) {
+    const ctxStrc = document.getElementById('chartStrc').getContext('2d');
+    charts.strc = new Chart(ctxStrc, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'STRC Price',
+                    data: filteredData.map(d => d.strc_price),
+                    borderColor: '#74FDE2',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2, tension: 0.3, pointRadius: 3,
+                    pointBackgroundColor: '#74FDE2', pointBorderColor: '#0A0A0A', pointBorderWidth: 2,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'BTC Rating',
+                    data: filteredData.map(d => d.strc_btc_rating),
+                    borderColor: '#0050CA',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2, borderDash: [5, 3], tension: 0.3, pointRadius: 3,
+                    pointBackgroundColor: '#0050CA', pointBorderColor: '#0A0A0A', pointBorderWidth: 2,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            ...chartDefaults,
+            plugins: {
+                ...chartDefaults.plugins,
+                legend: { display: true, labels: { color: '#888', font: { family: 'Open Sans', size: 11 }, boxWidth: 12, padding: 16 } }
+            },
+            scales: {
+                x: chartDefaults.scales.x,
+                y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => '$' + v.toFixed(2) }, position: 'left' },
+                y1: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + 'x' }, position: 'right', grid: { display: false } }
+            }
+        }
+    });
+    } // end if !singleDay (STRC)
+
+    // BMN Hashrate + Miners (dual axis)
+    if (!singleDay) {
+    const ctxHash = document.getElementById('chartBmnHashrate').getContext('2d');
+    charts.hash = new Chart(ctxHash, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Hashrate 24h (EH/s)',
+                    data: filteredData.map(d => d.bmn_hashrate_24h_eh),
+                    borderColor: '#86FA59',
+                    backgroundColor: makeGradient(ctxHash, 'rgba(134,250,89,0.1)', 'rgba(134,250,89,0)'),
+                    borderWidth: 2, fill: true, tension: 0.3, pointRadius: 3,
+                    pointBackgroundColor: '#86FA59', pointBorderColor: '#0A0A0A', pointBorderWidth: 2,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Active Miners',
+                    data: filteredData.map(d => d.bmn_active_miners),
+                    borderColor: '#74FDE2',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2, borderDash: [5, 3], tension: 0.3, pointRadius: 3,
+                    pointBackgroundColor: '#74FDE2', pointBorderColor: '#0A0A0A', pointBorderWidth: 2,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            ...chartDefaults,
+            plugins: {
+                ...chartDefaults.plugins,
+                legend: { display: true, labels: { color: '#888', font: { family: 'Open Sans', size: 11 }, boxWidth: 12, padding: 16 } }
+            },
+            scales: {
+                x: chartDefaults.scales.x,
+                y: { ...chartDefaults.scales.y, position: 'left' },
+                y1: { ...chartDefaults.scales.y, position: 'right', grid: { display: false }, ticks: { ...chartDefaults.scales.y.ticks, callback: v => (v/1000).toFixed(0) + 'k' } }
+            }
+        }
+    });
+    } // end if !singleDay (BMN Hashrate)
+
+    // Difficulty + Network Hashrate — uses NETWORK_HISTORY
+    const netThinned = thinData(filteredNet, 300);
+    const netLong = filteredNet.length > 180;
+    const netLabels = netThinned.map(d => netLong ? shortDateYear(d.date) : shortDate(d.date));
+    const elDiffNo = document.getElementById('noTrendDiff');
+    const canvasDiffEl = document.getElementById('chartDifficulty');
+    if (filteredNet.length < 2) { elDiffNo.style.display='flex'; canvasDiffEl.style.display='none'; }
+    else { elDiffNo.style.display='none'; canvasDiffEl.style.display='block'; }
+    if (filteredNet.length >= 2) {
+    const ctxDiff = document.getElementById('chartDifficulty').getContext('2d');
+    charts.diff = new Chart(ctxDiff, {
+        type: 'line',
+        data: {
+            labels: netLabels,
+            datasets: [
+                {
+                    label: 'Difficulty (T)',
+                    data: netThinned.map(d => d.difficulty_t),
+                    borderColor: '#FFFFFF',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2, tension: 0.3, pointRadius: 3,
+                    pointBackgroundColor: '#FFFFFF', pointBorderColor: '#0A0A0A', pointBorderWidth: 2,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Network Hashrate (EH/s)',
+                    data: netThinned.map(d => d.network_hashrate_eh),
+                    borderColor: '#0050CA',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2, borderDash: [5, 3], tension: 0.3, pointRadius: 3,
+                    pointBackgroundColor: '#0050CA', pointBorderColor: '#0A0A0A', pointBorderWidth: 2,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            ...chartDefaults,
+            plugins: {
+                ...chartDefaults.plugins,
+                legend: { display: true, labels: { color: '#888', font: { family: 'Open Sans', size: 11 }, boxWidth: 12, padding: 16 } }
+            },
+            scales: {
+                x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: netLong ? 12 : undefined, maxRotation: 0 } },
+                y: { ...chartDefaults.scales.y, position: 'left', ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + 'T' } },
+                y1: { ...chartDefaults.scales.y, position: 'right', grid: { display: false }, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + ' EH' } }
+            }
+        }
+    });
+    } // end if filteredNet >= 2
+} // end renderCharts
+
+// ===== RENDER TABLE =====
+function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    const sorted = [...filteredData].sort((a, b) => {
+        const cols = ['date','btc_price','hashprice_usd','difficulty','bmn_revenue_btc','bmn_hashrate_24h_eh','bmn_active_miners','bmn_uptime_pct','strc_price','strc_btc_rating'];
+        const key = cols[currentSort.col];
+        const va = a[key], vb = b[key];
+        if (va < vb) return currentSort.asc ? -1 : 1;
+        if (va > vb) return currentSort.asc ? 1 : -1;
+        return 0;
+    });
+
+    tbody.innerHTML = sorted.map(d => `
+        <tr>
+            <td>${d.date}</td>
+            <td class="number">${fmtCurrency(d.btc_price)}</td>
+            <td class="number">${fmtCurrency(d.hashprice_usd, 2)}</td>
+            <td class="number">${fmt(d.difficulty, 2)}T</td>
+            <td class="number">₿${fmt(d.bmn_revenue_btc, 3)}</td>
+            <td class="number">${fmt(d.bmn_hashrate_24h_eh, 1)} EH/s</td>
+            <td class="number">${fmt(d.bmn_active_miners)}</td>
+            <td class="number">${d.bmn_uptime_pct}%</td>
+            <td class="number">${fmtCurrency(d.strc_price, 2)}</td>
+            <td class="number">${d.strc_btc_rating}x</td>
+        </tr>
+    `).join('');
+}
+
+function sortTable(col) {
+    if (currentSort.col === col) {
+        currentSort.asc = !currentSort.asc;
+    } else {
+        currentSort.col = col;
+        currentSort.asc = true;
+    }
+    // Update arrows
+    for (let i = 0; i < 10; i++) {
+        const el = document.getElementById('sort' + i);
+        if (el) {
+            el.className = 'sort-arrow' + (i === col ? ' active' : '');
+            el.textContent = (i === col && currentSort.asc) ? '▲' : '▼';
+        }
+    }
+    renderTable();
+}
+
+// ===== RENDER ALL =====
+function renderAll() {
+    const latest = filteredData[filteredData.length - 1];
+    document.getElementById('lastUpdated').textContent = 'Last updated: ' + latest.date;
+    renderKPIs();
+    renderSignal();
+    renderCharts();
+    renderChartSignals();
+    renderTable();
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', async () => {
+    let autoHashprice = [];
+
+    // Load automated data (BTC price + network + derived hashprice) from data.json
+    try {
+        const resp = await fetch('data.json?v=' + Date.now());
+        if (resp.ok) {
+            const d = await resp.json();
+            if (d.btc_history) BTC_HISTORY = d.btc_history;
+            if (d.network_history) NETWORK_HISTORY = d.network_history;
+            if (d.hashprice_history) autoHashprice = d.hashprice_history;
+            if (d.updated) {
+                const ts = new Date(d.updated);
+                document.getElementById('lastUpdated').textContent =
+                    'Data: ' + ts.toLocaleDateString() + ' ' + ts.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            }
+            console.log('Loaded data.json:', BTC_HISTORY.length, 'BTC days,', NETWORK_HISTORY.length, 'network days,', autoHashprice.length, 'hashprice days');
+        }
+    } catch (e) {
+        console.warn('Could not load data.json', e);
+    }
+
+    // Load manual data (KPIs, hashprice history, signal) from manual_data.json
+    try {
+        const resp2 = await fetch('manual_data.json?v=' + Date.now());
+        if (resp2.ok) {
+            const m = await resp2.json();
+            if (m.data && m.data.length) DATA = m.data;
+            if (m.hashprice_history && m.hashprice_history.length) HASHPRICE_HISTORY = m.hashprice_history;
+            if (m.signal) SIGNAL = m.signal;
+            if (m.signal_points && Array.isArray(m.signal_points)) SIGNAL_POINTS = m.signal_points;
+            console.log('Loaded manual_data.json:', DATA.length, 'briefing days,', HASHPRICE_HISTORY.length, 'hashprice days');
+        }
+    } catch (e) {
+        console.warn('Could not load manual_data.json', e);
+    }
+
+    // Load chart signals (auto-generated by GitHub Actions every 2 days)
+    try {
+        const resp3 = await fetch('chart_signals.json?v=' + Date.now());
+        if (resp3.ok) {
+            const cs = await resp3.json();
+            if (cs.signals) CHART_SIGNALS = cs.signals;
+            console.log('Loaded chart_signals.json, generated:', cs.generated || 'unknown');
+        }
+    } catch (e) {
+        console.warn('Could not load chart_signals.json (optional)', e);
+    }
+
+    // Merge hashprice sources (priority: DATA entries > Luxor export > derived estimate)
+    // 1. Derived (subsidy-only) as lowest priority base
+    // 2. Luxor historical export overwrites derived where both exist
+    // 3. DATA entries (Luxor actual from BMN2 dashboard) take highest priority for recent dates
+    {
+        const merged = {};
+        autoHashprice.forEach(d => { merged[d.date] = d.hashprice_usd; });
+        HASHPRICE_HISTORY.forEach(d => { merged[d.date] = d.hashprice_usd; });
+        DATA.forEach(d => { if (d.hashprice_usd) merged[d.date] = d.hashprice_usd; });
+        HASHPRICE_HISTORY = Object.entries(merged)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([date, hashprice_usd]) => ({ date, hashprice_usd }));
+        console.log('Merged hashprice history:', HASHPRICE_HISTORY.length, 'days (derived → Luxor export → DATA)');
+    }
+
+    // Initialize filtered arrays and render
+    filteredBtc = [...BTC_HISTORY];
+    filteredHp = [...HASHPRICE_HISTORY];
+    filteredNet = [...NETWORK_HISTORY];
+    applyFilters();
+});
+</script>
+</body>
+</html>
