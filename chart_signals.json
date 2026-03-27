@@ -1,24 +1,24 @@
 {
   "signal_points": [
-    "Hashprice at $32.2/PH/day suggests current profitability for efficient miners.",
-    "BMN fleet hashrate of 27.8 EH/s is driving significant on-chain rewards.",
-    "STRC trading at par with a 4.9x BTC rating indicates strong investor confidence."
+    "Bitcoin price weakness is pressuring miner profitability, but hashprice remains stable.",
+    "BMN fleet growth continues, outperforming the network average.",
+    "STRC trading at par suggests strong investor confidence in miner performance."
   ],
   "signals": {
-    "btc_price": "BTC at $66.5k after a 7d drop of -5.4% presents a challenging revenue environment.",
-    "hashprice": "Hashprice stability at $32.2/PH/day supports consistent daily miner earnings.",
-    "difficulty": "Flat difficulty at 145.04T shows stable network competition for miners.",
-    "bmn_revenue": "BMN daily revenue of \u20bf8.036 reflects solid network participation.",
-    "strc": "STRC at $99.97 par with a 4.9x BTC rating shows STOKR's strong market position.",
-    "bmn_hashrate": "BMN's 27.8 EH/s active hashrate demonstrates robust operational capacity."
+    "btc_price": "BTC price fell 5.3% to $66,575, increasing pressure on miner margins.",
+    "hashprice": "Hashprice at $32.2/PH/day offers a stable revenue floor for efficient miners.",
+    "difficulty": "Flat difficulty suggests stable network conditions, intensifying competition.",
+    "bmn_revenue": "BMN daily revenue of \u20bf8.035532 indicates solid operational output.",
+    "strc": "STRC at $99.97 near par and 4.9x BTC rating shows strong miner valuation.",
+    "bmn_hashrate": "BMN hashrate at 27.833 EH/s with 69,365 active miners shows significant fleet expansion."
   },
-  "generated": "2026-03-27T12:33:42.369934+00:00",
+  "generated": "2026-03-27T12:40:58.562921+00:00",
   "data_snapshot": {
     "btc": {
-      "price": 66531.23,
+      "price": 66575.16,
       "high_7d": 71682.99,
       "low_7d": 66462.11,
-      "change_7d_pct": -5.38
+      "change_7d_pct": -5.32
     },
     "network": {
       "hashrate_eh": null,
