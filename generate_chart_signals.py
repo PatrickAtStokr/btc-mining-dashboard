@@ -80,13 +80,13 @@ def call_gemini(prompt):
         print("Get a free key at: https://aistudio.google.com/app/apikey", file=sys.stderr)
         sys.exit(1)
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key={api_key}"
 
     body = json.dumps({
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
             "temperature": 0.7,
-            "maxOutputTokens": 1024,
+            "maxOutputTokens": 8192,
             "responseMimeType": "application/json",
         }
     }).encode()
@@ -98,8 +98,28 @@ def call_gemini(prompt):
         method="POST"
     )
 
-    with urllib.request.urlopen(req, timeout=60) as r:
-        resp = json.loads(r.read())
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            resp = json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()[:800]
+        print(f"Gemini API error — HTTP {e.code}:", file=sys.stderr)
+        print(body, file=sys.stderr)
+        if e.code == 400 and "API_KEY_INVALID" in body:
+            print("\nHint: Your GEMINI_API_KEY is invalid. Check that:", file=sys.stderr)
+            print("  1. The secret name is exactly GEMINI_API_KEY (case-sensitive)", file=sys.stderr)
+            print("  2. The key was pasted without extra spaces or newlines", file=sys.stderr)
+            print("  3. The key starts with 'AIza'", file=sys.stderr)
+        elif e.code == 403:
+            print("\nHint: API access denied. Make sure the Gemini API is enabled for your project.", file=sys.stderr)
+        elif e.code == 429:
+            print("\nHint: Rate limited. Free tier allows 250 requests/day. Try again later.", file=sys.stderr)
+        elif e.code == 404:
+            print("\nHint: Model not found. The gemini-2.5-flash model may have been renamed.", file=sys.stderr)
+        sys.exit(1)
+    except urllib.error.URLError as e:
+        print(f"Network error calling Gemini API: {e}", file=sys.stderr)
+        sys.exit(1)
 
     # Extract text from Gemini response structure
     try:
