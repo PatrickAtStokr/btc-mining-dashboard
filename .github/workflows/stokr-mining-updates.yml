@@ -15,7 +15,7 @@ jobs:
         with:
           # REPLACE 'C12345678' with your actual Channel ID
           channel-id: 'C0AJFNX6U4R' 
-          slack-message: "STOKR Mining Updates"
+          slack-message: "STOKR Mining Updates - https://patrickatstokr.github.io/btc-mining-dashboard/"
         env:
           # This refers to the secret you created in GitHub Settings
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }} 
