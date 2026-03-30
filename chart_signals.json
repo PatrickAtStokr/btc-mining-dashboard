@@ -1,0 +1,35 @@
+{
+  "signal_points": [
+    "Signals will auto-populate once the update-signals workflow runs — trigger it from the Actions tab.",
+    "Add your GEMINI_API_KEY to GitHub repo secrets to enable research-quality signals.",
+    "Signals refresh every 2 days with fresh market data and mining economics analysis."
+  ],
+  "signals": {
+    "btc_price": [
+      "Signal will auto-generate — trigger the update-signals workflow from GitHub Actions.",
+      "Research-quality insights will replace this placeholder with BTC price analysis."
+    ],
+    "hashprice": [
+      "Signal will auto-generate — trigger the update-signals workflow from GitHub Actions.",
+      "Hashprice profitability tier analysis will appear here after first run."
+    ],
+    "difficulty": [
+      "Signal will auto-generate — trigger the update-signals workflow from GitHub Actions.",
+      "Difficulty and competitive dynamics analysis will appear here after first run."
+    ],
+    "bmn_revenue": [
+      "Signal will auto-generate — trigger the update-signals workflow from GitHub Actions.",
+      "BMN revenue outlook and yield analysis will appear here after first run."
+    ],
+    "strc": [
+      "Signal will auto-generate — trigger the update-signals workflow from GitHub Actions.",
+      "STRC par position and BTC Rating analysis will appear here after first run."
+    ],
+    "bmn_hashrate": [
+      "Signal will auto-generate — trigger the update-signals workflow from GitHub Actions.",
+      "Fleet performance and network share analysis will appear here after first run."
+    ]
+  },
+  "generated": "2026-03-27T00:00:00+00:00",
+  "data_snapshot": null
+}
