@@ -1,35 +1,47 @@
 {
   "signal_points": [
-    "Signals will auto-populate once the update-signals workflow runs — trigger it from the Actions tab.",
-    "Add your GEMINI_API_KEY to GitHub repo secrets to enable research-quality signals.",
-    "Signals refresh every 2 days with fresh market data and mining economics analysis."
+    "Hashprice below $35/PH/day signals significant margin compression for mid-tier miners.",
+    "STRC trading near par suggests market pricing in liquidation value, not yield demand.",
+    "A potential difficulty decrease is needed to alleviate pressure on less efficient miners."
   ],
   "signals": {
     "btc_price": [
-      "Signal will auto-generate — trigger the update-signals workflow from GitHub Actions.",
-      "Research-quality insights will replace this placeholder with BTC price analysis."
+      "BTC price stability near $67k offers no relief to miners facing compressed hashprice.",
+      "Any BTC price dip below $65k would further pressure miner profitability and hash rate."
     ],
     "hashprice": [
-      "Signal will auto-generate — trigger the update-signals workflow from GitHub Actions.",
-      "Hashprice profitability tier analysis will appear here after first run."
+      "Current $31.32 hashprice is below S19 XP breakeven, forcing legacy miners offline.",
+      "Declining hashprice is driven by elevated hash rate, not weak BTC price or low fees."
     ],
     "difficulty": [
-      "Signal will auto-generate — trigger the update-signals workflow from GitHub Actions.",
-      "Difficulty and competitive dynamics analysis will appear here after first run."
+      "Flat difficulty at 133.79T with high hashrate squeezes all miner tiers.",
+      "Hashrate growth continues to compress margins, pressuring older, less efficient machines."
     ],
     "bmn_revenue": [
-      "Signal will auto-generate — trigger the update-signals workflow from GitHub Actions.",
-      "BMN revenue outlook and yield analysis will appear here after first run."
+      "BMN revenue is constrained by low hashprice, despite high fleet uptime.",
+      "BMN yield will remain suppressed until hashprice recovers significantly."
     ],
     "strc": [
-      "Signal will auto-generate — trigger the update-signals workflow from GitHub Actions.",
-      "STRC par position and BTC Rating analysis will appear here after first run."
+      "STRC at $99.91 (near par) reflects its liquidation preference, not yield attractiveness.",
+      "A stable BTC Rating of 4.1x shows no immediate dilution or significant BTC accumulation."
     ],
     "bmn_hashrate": [
-      "Signal will auto-generate — trigger the update-signals workflow from GitHub Actions.",
-      "Fleet performance and network share analysis will appear here after first run."
+      "BMN's 27.8 EH/s fleet is operating efficiently, but network hashrate growth is key.",
+      "BMN's share of network rewards is stable but yield is dictated by network hashprice."
     ]
   },
-  "generated": "2026-03-27T00:00:00+00:00",
-  "data_snapshot": null
+  "generated": "2026-03-30T07:48:48.970195+00:00",
+  "data_snapshot": {
+    "btc": {
+      "price": 67300.06,
+      "high_7d": 71682.99,
+      "low_7d": 65604.15,
+      "change_7d_pct": -1.47
+    },
+    "network": {
+      "hashrate_eh": 957.7,
+      "difficulty_t": 133.79,
+      "prev_difficulty_t": 133.79
+    }
+  }
 }
