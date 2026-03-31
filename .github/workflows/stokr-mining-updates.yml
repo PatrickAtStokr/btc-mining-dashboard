@@ -2,20 +2,18 @@ name: Daily Slack Message
 
 on:
   schedule:
-    # This runs at 09:30 AM Berlin (Winter Time)
-    - cron: '30 8 * * *' 
-  workflow_dispatch: # This adds a "Run workflow" button for manual testing
+    # Runs at 09:30 Berlin time (CET/CEST)
+    - cron: '30 8 * * *'
+  workflow_dispatch:
 
 jobs:
   post-to-slack:
     runs-on: ubuntu-latest
     steps:
-      - name: Send Message
+      - name: Send Slack Message
         uses: slackapi/slack-github-action@v1.26.0
         with:
-          # REPLACE 'C12345678' with your actual Channel ID
-          channel-id: 'C0AJFNX6U4R' 
+          channel-id: 'C0AJFNX6U4R'  # Replace with your Slack channel ID
           slack-message: "STOKR Mining Updates - https://patrickatstokr.github.io/btc-mining-dashboard/"
         env:
-          # This refers to the secret you created in GitHub Settings
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }} 
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
