@@ -1,45 +1,45 @@
 {
   "signal_points": [
-    "Hashprice at $32.2/PH/day pressures all but the most efficient miners, signaling potential capitulation.",
-    "STRC trading near par suggests market pricing in current low hashprice, not strength.",
-    "Expect difficulty to rise post-halving as new, efficient machines come online, further squeezing margins."
+    "Miners with >$0.05/kWh costs face shutdown risk as hashprice hovers near legacy breakevens.",
+    "STRC at par suggests market pricing in potential STK dilution or difficulty in accretive BTC buys.",
+    "BMN yield is stable but faces headwinds if hashprice compression continues post-halving."
   ],
   "signals": {
     "btc_price": [
-      "BTC price weakness below $70k compresses miner margins, keeping hashprice low.",
-      "Potential BTC price recovery is the primary upside driver for miner profitability."
+      "BTC price range-bound action compresses miner margins, favoring efficient operations.",
+      "Upcoming macro data or ETF flows are key to breaking BTC price consolidation."
     ],
     "hashprice": [
-      "Hashprice below $45/PH/day indicates S19 XP and older miners are unprofitable.",
-      "Declining BTC price is the main driver of current hashprice compression."
+      "Hashprice below $45/PH/day pressures mid-tier miners like S19 XP towards breakeven.",
+      "Low hashprice is driven by stable network hashrate despite modest BTC price decline."
     ],
     "difficulty": [
-      "Stable difficulty with high hashrate indicates current miners are running at capacity, maximizing rewards.",
-      "Network hashrate growth is likely to resume, increasing difficulty and compressing margins."
+      "Flat difficulty means hashrate growth is minimal, keeping legacy miners under pressure.",
+      "Hashrate is stable, indicating no capitulation from less efficient miners yet."
     ],
     "bmn_revenue": [
-      "BMN revenue is driven by current low hashprice and stable fleet hashrate.",
-      "BMN yield will likely decrease if hashprice remains suppressed or network difficulty rises."
+      "BMN revenue is stable due to consistent uptime and hashprice, not hashrate growth.",
+      "BMN yield will decline if hashprice falls further without significant BTC price recovery."
     ],
     "strc": [
-      "STRC at par suggests market expects current low hashprice, not a premium for yield.",
-      "Declining BTC Rating would signal dilution, not accretive BTC purchases."
+      "STRC at par indicates neutral market perception, not demand for yield.",
+      "Stable BTC Rating suggests no recent dilution or significant BTC accumulation by Strategy."
     ],
     "bmn_hashrate": [
-      "BMN fleet is operating at high uptime, contributing 3.07% of network hashrate.",
-      "BMN's share of mining rewards is stable as its hashrate tracks network growth."
+      "BMN fleet maintains high uptime, contributing consistently to network hashrate.",
+      "BMN's share of network hashrate is steady, reflecting stable operational capacity."
     ]
   },
-  "generated": "2026-04-01T10:37:54.233038+00:00",
+  "generated": "2026-04-03T10:01:26.704568+00:00",
   "data_snapshot": {
     "btc": {
-      "price": 68425.99,
-      "high_7d": 71682.99,
+      "price": 66838.18,
+      "high_7d": 69101.02,
       "low_7d": 65604.15,
-      "change_7d_pct": -4.29
+      "change_7d_pct": -1.22
     },
     "network": {
-      "hashrate_eh": 904.5,
+      "hashrate_eh": 964.4,
       "difficulty_t": 133.79,
       "prev_difficulty_t": 133.79
     }
