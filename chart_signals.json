@@ -1,47 +1,47 @@
 {
   "signal_points": [
-    "Current hashprice below $30/PH/day forces older ASICs offline, consolidating hashrate among efficient miners.",
-    "STRC trading at par suggests market pricing in neutral yield, not a premium for Strategy's BTC backing.",
-    "Falling hashprice and static difficulty point to an imminent miner capitulation event, favoring S21 Pro owners."
+    "Hashprice compression below $32/PH/day pressures less efficient miners towards capitulation.",
+    "STRC's stability at par, despite low hashprice, suggests market values yield over BTC backing.",
+    "An imminent difficulty increase will further stress miners if BTC price doesn't rally."
   ],
   "signals": {
     "btc_price": [
-      "BTC price stability offers no margin relief for miners, keeping hashprice depressed despite recent difficulty increase.",
-      "Any BTC price dip below $65k risks triggering further ASIC shutdowns as hashprice tests legacy miner breakevens."
+      "BTC price resilience near $68.7k supports current hashprice but offers little margin expansion.",
+      "Any BTC price dip below $66k risks triggering further miner capitulation and hashprice drops."
     ],
     "hashprice": [
-      "Hashprice at $30.22/PH/day decimates S19 XP and older miners, signaling a potential consolidation phase.",
-      "Depressed hashprice is driven by elevated network hashrate, not weak BTC price, indicating margin compression."
+      "Current hashprice at $31.31/PH/day signals profitability squeeze for S19j Pro and legacy miners.",
+      "Hashprice is driven by BTC price strength versus an elevated network hashrate, compressing margins."
     ],
     "difficulty": [
-      "Difficulty's 1.5% rise pressured margins, pushing S19j Pro miners towards shutdown as breakevens are tested.",
-      "Hashrate growth continues, indicating new capacity online and intensifying competition for block rewards."
+      "Flat difficulty masks underlying pressure as hashrate nears 900 EH/s, impacting mid-tier miners.",
+      "Aggressive global hashrate growth continues to compress margins for less efficient mining operations."
     ],
     "bmn_revenue": [
-      "BMN revenue is directly impacted by the low hashprice, highlighting sensitivity to network-wide profitability.",
-      "BMN yield faces downward pressure unless hashprice recovers or fleet uptime significantly improves."
+      "BMN daily revenue of \u20bf8.03 suggests consistent operational uptime offsetting low hashprice.",
+      "BMN yield will remain compressed unless hashprice rises significantly or network hashrate falls."
     ],
     "strc": [
-      "STRC at par ($100) indicates the market views Strategy's BTC backing as neutral, not a premium yield source.",
-      "A stable BTC Rating of 4.2x suggests no recent BTC sales or aggressive purchases by Strategy."
+      "STRC trading at par ($100) indicates neutral market sentiment, balancing yield demand and risk.",
+      "STRC's stable 4.2x BTC Rating implies no significant BTC sales or dilution recently."
     ],
     "bmn_hashrate": [
-      "BMN's 27.8 EH/s fleet is operating efficiently, but low hashprice limits profitability for its miners.",
-      "BMN's share of network hashrate is stable, but current economics limit its ability to capture revenue growth."
+      "BMN fleet's 27.8 EH/s shows solid uptime, generating rewards despite current hashprice levels.",
+      "BMN's steady hashrate share is crucial for consistent revenue even as network hashrate climbs."
     ]
   },
-  "generated": "2026-04-05T09:09:16.727670+00:00",
+  "generated": "2026-04-07T10:37:41.469813+00:00",
   "data_snapshot": {
     "btc": {
-      "price": 66882.84,
-      "high_7d": 69101.02,
-      "low_7d": 65813.32,
-      "change_7d_pct": 0.31
+      "price": 68728.09,
+      "high_7d": 69929.84,
+      "low_7d": 66045.88,
+      "change_7d_pct": 3.66
     },
     "network": {
-      "hashrate_eh": 829.0,
+      "hashrate_eh": 884.2,
       "difficulty_t": 138.97,
-      "prev_difficulty_t": 136.97
+      "prev_difficulty_t": 138.97
     }
   }
 }
