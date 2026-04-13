@@ -1,45 +1,45 @@
 {
   "signal_points": [
-    "Current hashprice compression signals significant margin pressure on mid-tier miners, necessitating efficiency upgrades or capitulation.",
-    "STRC at par suggests market pricing in neutral yield expectations, not a premium for the BTC backing.",
-    "A sustained BTC price above $70k is crucial to offset current hashprice lows and prevent further miner consolidation."
+    "Current hashprice compression is forcing mid-tier miners towards capitulation, highlighting the need for efficient operations.",
+    "STRC trading at par suggests the market is valuing its yield near liquidation preference, not a premium for BTC backing.",
+    "Monitor difficulty adjustments closely as they will determine the pace of hashprice recovery and miner survival."
   ],
   "signals": {
     "btc_price": [
-      "BTC price holding above $70k supports hashprice but is insufficient to lift it beyond breakeven for many miners.",
-      "Potential for a BTC price rally exists, but sustained upward momentum is needed to improve miner profitability."
+      "BTC price stability offers miners a reprieve, but margin pressure persists at current hashprice levels.",
+      "Any significant BTC price volatility will directly impact hashprice and miner profitability tiers."
     ],
     "hashprice": [
-      "Hashprice at $32.91/PH/day is below S19 XP breakeven, pushing less efficient miners towards shutdown.",
-      "Hashprice is driven by BTC price strength offset by high network hashrate, creating a margin squeeze."
+      "Hashprice at $32.04/PH/day pressures miners below S19 XP breakeven, signaling potential capitulation.",
+      "Hashprice is driven by BTC price strength and network hash rate growth, currently in compression."
     ],
     "difficulty": [
-      "Difficulty holding steady at 138.97T with high hashrate compresses margins for all but the most efficient miners.",
-      "Steady hashrate growth implies ongoing competition, making it harder for marginal miners to survive."
+      "Flat difficulty offers no relief, intensifying pressure on less efficient miners like S19j Pro and legacy S19s.",
+      "Hashrate growth is stagnant, preventing difficulty adjustments and prolonging miner margin compression."
     ],
     "bmn_revenue": [
-      "BMN daily revenue reflects current hashprice and fleet uptime, indicating pressure on miner earnings.",
-      "BMN yield will likely remain subdued unless hashprice recovers significantly or network hashrate declines."
+      "BMN revenue is dictated by current low hashprice, overshadowing fleet uptime effects.",
+      "BMN yield will remain subdued until hashprice recovers, contingent on BTC price or hash rate reduction."
     ],
     "strc": [
-      "STRC trading at par ($100) implies no premium for yield, suggesting neutral market sentiment towards the preferred stock.",
-      "A stable BTC Rating of 4.4x indicates no immediate dilution or significant BTC accumulation by Strategy."
+      "STRC at par indicates the market sees yield near liquidation preference, not a premium for BTC backing.",
+      "Stable BTC Rating suggests no dilution or significant BTC sales from Strategy's treasury."
     ],
     "bmn_hashrate": [
-      "BMN fleet's 27.833 EH/s shows consistent operational performance, but margin pressure remains.",
-      "BMN's share of network hashrate is stable, but revenue is directly tied to the falling hashprice."
+      "BMN fleet operational efficiency is key as 27.8 EH/s competes in a challenging hashprice environment.",
+      "BMN's 2.6% share of network hashrate will see proportional revenue changes with network hash rate shifts."
     ]
   },
-  "generated": "2026-04-11T07:51:25.712293+00:00",
+  "generated": "2026-04-13T09:14:59.827117+00:00",
   "data_snapshot": {
     "btc": {
-      "price": 72726.0,
-      "high_7d": 73242.51,
-      "low_7d": 66767.01,
-      "change_7d_pct": 8.62
+      "price": 70719.29,
+      "high_7d": 73538.49,
+      "low_7d": 67946.57,
+      "change_7d_pct": 2.15
     },
     "network": {
-      "hashrate_eh": 863.5,
+      "hashrate_eh": 1070.8,
       "difficulty_t": 138.97,
       "prev_difficulty_t": 138.97
     }
