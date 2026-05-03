@@ -1,42 +1,42 @@
 {
   "signal_points": [
-    "Hashprice below S19 XP breakeven confirms imminent miner capitulation, driving hashrate decline.",
-    "Falling hashprice and flat revenue highlight operational inefficiency; only a 39% surge can restore investor returns.",
-    "A projected -3.0% difficulty drop will rapidly boost individual miner profitability, signaling a potential inflection point."
+    "Hashprice stagnation below breakevens forces older ASICs offline, signaling capitulation.",
+    "BMN's superior hashrate growth offers a competitive edge, but flat revenue demands focus on BTC price.",
+    "Monitor network difficulty for a sustained slowdown, indicating a potential shift in miner sentiment."
   ],
   "signals": {
     "btc_price": [
-      "Price consolidation signals miners should preserve treasury rather than sell.",
-      "Current BTC price remains well above most public miner breakevens, suggesting resilience."
+      "BTC's mild weekly gain suggests stable hashprice, maintaining miner revenue streams.",
+      "Current price action indicates a consolidation, urging miners to hoard rather than sell treasury BTC."
     ],
     "hashprice": [
-      "Current hashprice below S19 XP breakeven signals significant miner capitulation is underway.",
-      "Falling hashprice momentum indicates a sustained period of hashrate decline is likely."
+      "S21 Pro miners are profitable, but S19 XP and older models face imminent shutdown risk.",
+      "Hashprice is stuck below mid-tier breakevens, indicating sustained miner capitulation."
     ],
     "difficulty": [
-      "Projected -3.0% difficulty drop will boost hashprice, reversing recent compression.",
-      "Decelerating -6.7% hashrate trend signals slower new capacity deployment, not capitulation."
+      "Projected difficulty rise signals continued hashprice compression, squeezing margins.",
+      "Decelerating hashrate trend suggests new capacity is cautious, not a rush."
     ],
     "bmn_revenue": [
-      "Flat revenue signals static hashprice is the sole determinant, not uptime improvements.",
-      "Yield remains below target; a 39% hashprice surge to $50 is vital for investor returns."
+      "Static hashprice ($37.22) dictates flat revenue, negating uptime gains; focus remains on BTC price uplift.",
+      "Daily yield still trails target returns, requiring a significant 39% hashprice jump to $50 for profitability."
     ],
     "strc": [
-      "STRC near par is neutral, reflecting liquidation preference, not investor conviction.",
+      "STRC near par is neutral; market prices it at liquidation preference, not conviction.",
       "Flat BTC Rating signals Strategy is neither diluting nor adding BTC to treasury."
     ],
     "bmn_hashrate": [
-      "BMN's 27.8 EH/s fleet hashrate growth is outpacing network expansion, increasing its competitive edge.",
-      "The stable active miner count suggests BMN is maintaining its operational capacity, avoiding costly degradation."
+      "BMN's hashrate growth outpaces network, signaling a strong competitive position for token holders.",
+      "Stable active miners suggest BMN is efficiently managing its fleet, preserving future yield potential."
     ]
   },
-  "generated": "2026-05-01T09:02:38.152131+00:00",
+  "generated": "2026-05-03T08:48:10.962265+00:00",
   "data_snapshot": {
     "btc": {
-      "price": 77353.74,
+      "price": 78423.89,
       "high_7d": 79260.26,
       "low_7d": 75436.57,
-      "change_7d_pct": -0.64
+      "change_7d_pct": 0.48
     },
     "network": {
       "hashrate_eh": 936.9,
@@ -47,14 +47,14 @@
       "diff_change_pct": 0.0
     },
     "mempool_difficulty": {
-      "progress_pct": 94.4,
-      "estimated_change_pct": -3.0,
-      "remaining_blocks": 113,
-      "remaining_time_sec": 69925982,
-      "estimated_date": 1777696066982
+      "progress_pct": 8.6,
+      "estimated_change_pct": 0.7,
+      "remaining_blocks": 1842,
+      "remaining_time_sec": 1099758732,
+      "estimated_date": 1778897831732
     },
     "mempool_fees": {
-      "fastest_sat_vb": 3,
+      "fastest_sat_vb": 2,
       "half_hour_sat_vb": 1,
       "economy_sat_vb": 1
     }
