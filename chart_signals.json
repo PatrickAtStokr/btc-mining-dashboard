@@ -1,60 +1,60 @@
 {
   "signal_points": [
-    "S21 Pro profitability is a lone beacon; older ASICs are capitulating, forcing a hashrate correction.",
-    "Falling hashprice and decelerating hashrate growth signal a challenging environment for miner expansion.",
-    "Watch for a potential hashprice surge above $39.40 to reignite miner profitability and signal a bottom."
+    "Declining hashprice below breakevens forces mid-tier miner shutdowns, accelerating network hashrate contraction.",
+    "New capacity deployment at 7.8% weekly surge outpaces network difficulty, squeezing margins for older fleets.",
+    "A sustained hashprice rally above $45 is critical for BMN revenue to meet investor yield targets."
   ],
   "signals": {
     "btc_price": [
-      "Current BTC trend implies a rising hashprice, significantly boosting miner treasury value and profitability.",
-      "BTC's price action suggests a breakout pattern, prompting miners to consider strategic BTC accumulation."
+      "Rising BTC price boosts hashprice, enhancing miner revenue and treasury asset value significantly.",
+      "Current BTC breakout pattern favors strategic accumulation, rewarding miners who expand capacity now."
     ],
     "hashprice": [
-      "S21 Pro remains profitable; S19 XP and older ASICs are now losing money, forcing miner capitulation.",
-      "Hashprice falling below S19 XP breakeven suggests continued ASIC shutdowns and network hashrate decline."
+      "Mid-tier miners below S19 XP breakeven must shut down or face losses.",
+      "Declining hashprice below critical breakevens signals imminent hashrate contraction."
     ],
     "difficulty": [
-      "Projected 1.9% difficulty rise will compress hashprice by ~1.9%, signaling further margin compression for miners.",
-      "The 7-day hashrate trend of -1.6% shows decelerating growth, suggesting delayed deployment of new mining rigs."
+      "Projected 2.1% difficulty increase will compress hashprice by ~2.1%, accelerating miner margin squeeze.",
+      "The 7.8% weekly hashrate surge signals rapid deployment of new, efficient mining capacity."
     ],
     "bmn_revenue": [
-      "Flat hashprice at $38.6/PH/day offers no organic revenue growth for BMN holders.",
-      "BMN's current daily yield is insufficient; hashprice needs a 2.7% surge to $39.40 for profit targets."
+      "BMN revenue is flat, entirely reliant on a hashprice rebound for any upside.",
+      "Current yield lags targets; a sustained hashprice rally to $45 is essential."
     ],
     "strc": [
-      "STRC near par implies market prices liquidation preference, not speculative growth.",
-      "Flat BTC Rating suggests Strategy is not actively accumulating or selling Bitcoin."
+      "STRC near par signals a neutral market valuation, reflecting liquidation preference, not growth expectations.",
+      "A flat BTC Rating indicates Strategy is passively managing its Bitcoin treasury, neither accumulating nor selling aggressively."
     ],
     "bmn_hashrate": [
-      "BMN2 fleet hashrate growth trails network, signaling reduced future revenue share for token holders.",
-      "The stable active miner count suggests BMN is effectively managing its hardware, not expanding aggressively."
+      "BMN's hashrate is falling behind network growth, signaling a shrinking revenue share for token holders.",
+      "Active miner count suggests BMN is prioritizing efficiency over aggressive fleet expansion."
     ]
   },
-  "generated": "2026-05-07T09:34:35.232327+00:00",
+  "generated": "2026-05-09T08:28:07.356468+00:00",
   "data_snapshot": {
     "btc": {
-      "price": 81041.71,
+      "price": 80369.65,
       "high_7d": 82496.21,
-      "low_7d": 75986.04,
-      "change_7d_pct": 6.51
+      "low_7d": 78128.46,
+      "change_7d_pct": 2.66
     },
     "network": {
-      "hashrate_eh": 928.5,
-      "hashrate_7d_ago_eh": 943.7,
-      "hashrate_7d_change_pct": -1.6,
+      "hashrate_eh": 968.0,
+      "hashrate_7d_ago_eh": 897.6,
+      "hashrate_7d_change_pct": 7.8,
       "difficulty_t": 132.47,
       "prev_difficulty_t": 132.47,
       "diff_change_pct": 0.0
     },
     "mempool_difficulty": {
-      "progress_pct": 38.6,
-      "estimated_change_pct": 1.9,
-      "remaining_blocks": 1238,
-      "remaining_time_sec": 730153830,
-      "estimated_date": 1778876611830
+      "progress_pct": 52.9,
+      "estimated_change_pct": 2.1,
+      "remaining_blocks": 949,
+      "remaining_time_sec": 558250199,
+      "estimated_date": 1778873519199
     },
     "mempool_fees": {
-      "fastest_sat_vb": 1,
+      "fastest_sat_vb": 2,
       "half_hour_sat_vb": 1,
       "economy_sat_vb": 1
     }
