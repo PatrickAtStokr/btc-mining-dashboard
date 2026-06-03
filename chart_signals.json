@@ -1,52 +1,58 @@
 {
   "signal_points": [
-    "Sub-$40 hashprice signals immediate capitulation risk for less efficient miners.",
-    "STRC discount and flat BMN revenue highlight increasing capital cost and operational constraints.",
-    "Decelerating hashrate growth suggests new capacity is delayed, creating a potential yield opportunity."
+    "Falling hashprice below $31 makes older ASICs unprofitable, forcing immediate miner capitulation.",
+    "The sharp hashrate drop signals broad miner distress, increasing risk for all operators including BMN.",
+    "A projected difficulty drop offers a reprieve, but miners need sustained price gains for true recovery."
   ],
   "signals": {
     "btc_price": [
-      "BTC's 7-day drop signals lower hashprice, pressuring miner treasury liquidity.",
-      "Current price action suggests a bearish consolidation, forcing miners to consider selling BTC."
+      "BTC's ~11% weekly drop implies hashprice is falling, increasing the urgency to sell mined BTC.",
+      "The price is testing the upper bound of the profitable cost-of-production range, signaling high risk for marginal miners."
     ],
     "hashprice": [
-      "Current hashprice below S19 XP breakeven signals significant miner capitulation ahead.",
-      "Sub-$40 hashprice confirms efficiency arms race; only S21 Pros remain comfortably profitable."
+      "Current sub-$31 hashprice signals S19 XP and older ASICs are now unprofitable, forcing shutdowns.",
+      "Hashprice decline, driven by falling BTC price, is pushing miners closer to forced capitulation."
     ],
     "difficulty": [
-      "Projected 1.2% difficulty hike will compress hashprice, squeezing marginal operators.",
-      "Decelerating hashrate suggests new capacity is delayed, not immediately hitting the network."
+      "Projected 9.4% difficulty drop will boost hashprice, aiding miner profitability and recovery.",
+      "Significant 20.1% hashrate decline signals major miner capitulation or offline capacity."
     ],
     "bmn_revenue": [
-      "Flat BMN revenue signals STOKR's allocated hashrate is capped, awaiting new miner deployment.",
-      "BMN yield trails targets; a 20% hashprice jump or difficulty drop is essential for recovery."
+      "BMN revenue is flat, driven by stable hashprice and uptime, indicating no new hashrate has been deployed.",
+      "Yield remains below target, requiring a ~20% hashprice increase or significant difficulty reduction."
     ],
     "strc": [
-      "STRC's discount to par signals market pricing in higher credit or duration risk for Strategy.",
-      "Flat BTC Rating suggests Strategy is not actively growing its Bitcoin treasury, potentially missing accumulation opportunities."
+      "STRC's discount to par widens, signaling increased credit or duration risk perception for Strategy.",
+      "Flat BTC Rating indicates Strategy is not actively accumulating Bitcoin, missing potential upside."
     ],
     "bmn_hashrate": [
-      "Fleet hashrate growth now mirrors network expansion, signaling improved future yields for BMN2 holders.",
-      "Stabilized active miner count suggests BMN has ended fleet contraction and is prioritizing operational efficiency."
+      "BMN's 3.66% network share is holding steady, indicating competitive operational efficiency against rivals.",
+      "Active miner count stabilization suggests BMN is no longer shedding older hardware, signaling a potential yield floor."
     ]
   },
-  "generated": "2026-06-01T12:38:59.066815+00:00",
+  "generated": "2026-06-03T11:57:24.088426+00:00",
   "data_snapshot": {
     "btc": {
-      "price": 72171.69,
-      "high_7d": 77664.65,
-      "low_7d": 72171.69,
-      "change_7d_pct": -6.65
+      "price": 67001.73,
+      "high_7d": 75652.4,
+      "low_7d": 65748.9,
+      "change_7d_pct": -11.43
     },
     "network": {
-      "hashrate_eh": 959.6,
-      "hashrate_7d_ago_eh": 1120.5,
-      "hashrate_7d_change_pct": -14.4,
-      "difficulty_t": 137.88,
-      "prev_difficulty_t": 136.61,
-      "diff_change_pct": 0.9
+      "hashrate_eh": 759.8,
+      "hashrate_7d_ago_eh": 950.7,
+      "hashrate_7d_change_pct": -20.1,
+      "difficulty_t": 138.96,
+      "prev_difficulty_t": 138.96,
+      "diff_change_pct": 0.0
     },
-    "mempool_difficulty": null,
+    "mempool_difficulty": {
+      "progress_pct": 32.7,
+      "estimated_change_pct": -9.4,
+      "remaining_blocks": 1357,
+      "remaining_time_sec": 900353216,
+      "estimated_date": 1781388178216
+    },
     "mempool_fees": {
       "fastest_sat_vb": 2,
       "half_hour_sat_vb": 1,
